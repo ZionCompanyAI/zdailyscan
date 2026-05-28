@@ -8,6 +8,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 COPY --from=builder /install /usr/local
+RUN crawl4ai-setup
 COPY app/ ./app/
 
 EXPOSE 8000
