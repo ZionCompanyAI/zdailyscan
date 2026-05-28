@@ -1,5 +1,7 @@
 # ZDailyScan
 
+[![CI](https://github.com/ZionCompanyAI/zdailyscan/actions/workflows/ci.yml/badge.svg)](https://github.com/ZionCompanyAI/zdailyscan/actions/workflows/ci.yml)
+
 Scanner diário de oportunidades AliExpress para LojaHi Select — produtos top-vendidos, análise de viabilidade e comparativo de mercado BR.
 
 ## Descrição
