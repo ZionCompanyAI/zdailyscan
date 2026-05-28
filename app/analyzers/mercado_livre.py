@@ -21,7 +21,7 @@ async def search_br_market(query: str) -> BRMarket:
         data = response.json()
 
     results = data.get("results", [])
-    count = len(results)
+    count = data.get("paging", {}).get("total", len(results))
 
     if count == 0:
         return BRMarket(
