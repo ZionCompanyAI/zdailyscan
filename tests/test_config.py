@@ -29,3 +29,31 @@ def test_settings_missing_required_raises(monkeypatch):
     from app.config import Settings
     with pytest.raises(Exception):
         Settings()
+
+
+def test_telegram_chat_id_default(monkeypatch):
+    monkeypatch.setenv("ALIEXPRESS_APP_KEY", "x")
+    monkeypatch.setenv("ALIEXPRESS_APP_SECRET", "x")
+    monkeypatch.setenv("ALIEXPRESS_TRACKING_ID", "x")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
+    monkeypatch.setenv("MC_API_KEY", "x")
+    monkeypatch.setenv("MC_URL", "http://mc.example.com")
+    monkeypatch.delenv("ZDAILYSCAN_TELEGRAM_CHAT_ID", raising=False)
+
+    from app.config import Settings
+    s = Settings()
+    assert s.telegram_chat_id == 7041182277
+
+
+def test_telegram_chat_id_from_env(monkeypatch):
+    monkeypatch.setenv("ALIEXPRESS_APP_KEY", "x")
+    monkeypatch.setenv("ALIEXPRESS_APP_SECRET", "x")
+    monkeypatch.setenv("ALIEXPRESS_TRACKING_ID", "x")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
+    monkeypatch.setenv("MC_API_KEY", "x")
+    monkeypatch.setenv("MC_URL", "http://mc.example.com")
+    monkeypatch.setenv("ZDAILYSCAN_TELEGRAM_CHAT_ID", "9999999999")
+
+    from app.config import Settings
+    s = Settings()
+    assert s.telegram_chat_id == 9999999999
