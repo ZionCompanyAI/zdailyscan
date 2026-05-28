@@ -1,7 +1,5 @@
-from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-import pytest
 
 from app.scoring.scorer import ProductScore
 from app.reporters.telegram_reporter import _format_message, send_daily_report
