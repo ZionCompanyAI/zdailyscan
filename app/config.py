@@ -8,5 +8,6 @@ class Settings(BaseSettings):
     telegram_bot_token: str
     mc_api_key: str
     mc_url: str
+    usd_brl_rate: float = 5.70
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
