@@ -21,6 +21,8 @@ class ProductScore(BaseModel):
     margin_brl: float
     sell_price_suggestion_brl: float
     viavel: bool
+    demand_count: int = 0
+    import_cost_brl: float = 0.0
 
 
 def score_product(ali: AliProduct, market: BRMarket, cost: ImportCost) -> ProductScore:
@@ -65,4 +67,6 @@ def score_product(ali: AliProduct, market: BRMarket, cost: ImportCost) -> Produc
         margin_brl=round(margin_brl, 2),
         sell_price_suggestion_brl=round(sell_price_suggestion_brl, 2),
         viavel=score_total >= 0.60,
+        demand_count=market.result_count,
+        import_cost_brl=cost.total_cost_brl,
     )
