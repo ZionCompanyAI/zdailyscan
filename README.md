@@ -6,7 +6,7 @@ Scanner diário de oportunidades AliExpress para LojaHi Select — produtos top-
 
 ZDailyScan é um serviço FastAPI que escaneia o AliExpress em busca de produtos com alto potencial para a loja LojaHi Select, gerando relatórios diários via Telegram e integrando-se ao Mission Control.
 
-O scan completo executa automaticamente às **06:00 BRT** (cron `0 9 * * *` UTC): scraper AliExpress → analyzer Mercado Livre → scorer de viabilidade → persistência JSON.
+O scan completo executa automaticamente às **06:00 BRT** (cron `0 9 * * *` UTC): scraper AliExpress → analyzer Mercado Livre → scorer de viabilidade → persistência JSON → relatório Telegram + arquivo Markdown.
 
 ## Setup local
 
@@ -52,6 +52,8 @@ uvicorn app.main:app --reload
 | `app/analyzers/mercado_livre.py` | Busca preços e contagem de resultados no Mercado Livre BR |
 | `app/analyzers/import_calculator.py` | Calcula custo total de importação (II + ICMS, regimes remessa_conforme e normal) |
 | `app/scoring/scorer.py` | Score de viabilidade composto (margem, demanda, oportunidade, tendência, logística) |
+| `app/reporters/telegram_reporter.py` | Envia top 10 oportunidades para Toni via `POST $MC_URL/telegram/reply` |
+| `app/reporters/file_reporter.py` | Salva relatório Markdown em `data/reports/YYYY-MM-DD.md` |
 
 ### Score de viabilidade
 
