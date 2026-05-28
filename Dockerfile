@@ -9,6 +9,8 @@ FROM python:3.11-slim
 WORKDIR /app
 COPY --from=builder /install /usr/local
 COPY app/ ./app/
+# Install Chromium for Crawl4AI (must run in final stage — browser binaries stay here)
+RUN crawl4ai-setup
 
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

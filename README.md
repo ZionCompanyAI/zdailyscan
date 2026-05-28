@@ -40,12 +40,17 @@ uvicorn app.main:app --reload
 | `MC_URL` | Sim | URL do Mission Control (ex: https://orchestrator.zioncompanyai.com.br) |
 | `SCAN_API_KEY` | Não | Chave para `POST /scan/run` (default: `test`) |
 | `USD_BRL_RATE` | Não | Taxa de câmbio USD/BRL (default: `5.70`) |
+| `SCRAPER_MODE` | Não | Motor de scraping: `crawl4ai` (default) ou `mock` (testes sem rede) |
+| `FIRECRAWL_URL` | Não | URL do Firecrawl self-hosted — ativado como fallback se Crawl4AI falhar |
 
 ## Módulos
 
 | Módulo | Descrição |
 |--------|-----------|
-| `app/aliexpress.py` | Cliente AliExpress Affiliate API — busca produtos quentes por categoria |
+| `app/scrapers/aliexpress.py` | Scraper AliExpress via Crawl4AI — modelo `AliProduct` + dispatch por `SCRAPER_MODE` |
+| `app/scrapers/mock.py` | 5 produtos fixos para testes offline (`SCRAPER_MODE=mock`) |
+| `app/scrapers/fallback_firecrawl.py` | Fallback via Firecrawl self-hosted quando Crawl4AI falha |
+| `app/aliexpress.py` | Cliente AliExpress Affiliate API (legado — usado pelo pipeline atual) |
 | `app/pipeline.py` | Orquestrador do scan: AliExpress → analyzer → scorer, retorna top-20 viáveis |
 | `app/storage.py` | Persistência JSON diária em `data/scans/YYYY-MM-DD.json` |
 | `app/scheduler.py` | `AsyncIOScheduler` registrado no lifespan do FastAPI (cron 09:00 UTC) |
