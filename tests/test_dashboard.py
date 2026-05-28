@@ -3,7 +3,6 @@
 import json
 import os
 
-import pytest
 
 # Env vars must be set before any app import
 os.environ.setdefault("ALIEXPRESS_APP_KEY", "test")
