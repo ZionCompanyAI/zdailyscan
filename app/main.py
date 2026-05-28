@@ -2,9 +2,12 @@ import os
 import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import BackgroundTasks, FastAPI, Header, HTTPException
+from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.pipeline import ScanResult, run_daily_scan
+from app.routers import auth, dashboard
 from app.scheduler import create_scheduler
 from app.scrapers import get_hot_products
 from app.storage import get_latest_scan, load_scan, save_scan
@@ -19,6 +22,20 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="ZDailyScan", lifespan=lifespan)
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+app.include_router(auth.router)
+app.include_router(dashboard.router)
+
+
+@app.get("/")
+def root(request: Request):
+    from app.routers.auth import get_current_user
+    user = get_current_user(request)
+    if user:
+        return RedirectResponse(url="/dashboard", status_code=303)
+    return RedirectResponse(url="/login", status_code=303)
 
 
 @app.get("/health")

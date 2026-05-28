@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — ZDailyScan{% endblock %}
+{% block content %}
+<h2>Relatórios disponíveis</h2>
+
+<form method="post" action="/dashboard/scan">
+  <button type="submit" class="btn-scan">⚡ Force Scan</button>
+</form>
+
+{% if dates %}
+<ul class="report-list">
+  {% for date in dates %}
+  <li><a href="/dashboard/{{ date }}">{{ date }}</a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>Nenhum relatório encontrado. Execute um scan para começar.</p>
+{% endif %}
+{% endblock %}
