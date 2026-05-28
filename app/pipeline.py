@@ -3,7 +3,7 @@ from datetime import date
 
 from pydantic import BaseModel
 
-from app.aliexpress import get_hot_products
+from app.scrapers import get_hot_products
 from app.analyzers.import_calculator import calculate_import_cost
 from app.analyzers.mercado_livre import search_br_market
 from app.scoring.scorer import AliProduct, ProductScore, score_product
