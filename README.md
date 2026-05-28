@@ -26,16 +26,32 @@ cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
+## Arquitetura
+
+```
+app/
+├── config.py          — variáveis de ambiente (pydantic-settings)
+├── models.py          — ProductScore (modelo de oportunidade avaliada)
+├── pipeline.py        — run_daily_scan(): orquestra scan + reporters
+├── analyzers/
+│   ├── mercado_livre.py     — busca preços no ML para análise de demanda
+│   └── import_calculator.py — calcula custo total de importação (II + ICMS)
+└── reporters/
+    ├── telegram_reporter.py — envia top 10 via Mission Control /telegram/reply
+    └── file_reporter.py     — salva relatório em data/reports/YYYY-MM-DD.md
+```
+
 ## Env vars
 
-| Variável | Descrição |
-|----------|-----------|
-| `ALIEXPRESS_APP_KEY` | App Key da API AliExpress |
-| `ALIEXPRESS_APP_SECRET` | App Secret da API AliExpress |
-| `ALIEXPRESS_TRACKING_ID` | Tracking ID para afiliados |
-| `TELEGRAM_BOT_TOKEN` | Token do bot Telegram para notificações |
-| `MC_API_KEY` | API Key do Mission Control |
-| `MC_URL` | URL do Mission Control (ex: https://orchestrator.zioncompanyai.com.br) |
+| Variável | Descrição | Padrão |
+|----------|-----------|--------|
+| `ALIEXPRESS_APP_KEY` | App Key da API AliExpress | — |
+| `ALIEXPRESS_APP_SECRET` | App Secret da API AliExpress | — |
+| `ALIEXPRESS_TRACKING_ID` | Tracking ID para afiliados | — |
+| `TELEGRAM_BOT_TOKEN` | Token do bot Telegram para notificações | — |
+| `MC_API_KEY` | API Key do Mission Control | — |
+| `MC_URL` | URL do Mission Control (ex: https://orchestrator.zioncompanyai.com.br) | — |
+| `USD_BRL_RATE` | Cotação USD/BRL para cálculo de importação | `5.70` |
 
 ## Testes
 
