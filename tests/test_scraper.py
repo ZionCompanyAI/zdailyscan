@@ -3,7 +3,6 @@ Tests for app/scrapers — issue #2 acceptance criteria.
 All tests use SCRAPER_MODE=mock to avoid network/crawl4ai dependency.
 """
 
-import pytest
 
 
 def test_aliproduct_fields_complete():
