@@ -8,8 +8,6 @@ from app.scoring.scorer import ProductScore
 
 logger = logging.getLogger(__name__)
 
-TELEGRAM_CHAT_ID = 7041182277
-
 
 def _format_message(results: list[ProductScore]) -> str:
     today = date.today().strftime("%Y-%m-%d")
@@ -40,7 +38,7 @@ async def send_daily_report(results: list[ProductScore]) -> bool:
             resp = await client.post(
                 f"{settings.mc_url}/telegram/reply",
                 headers={"x-api-key": settings.mc_api_key},
-                json={"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "Markdown"},
+                json={"chat_id": settings.telegram_chat_id, "text": message, "parse_mode": "Markdown"},
             )
             resp.raise_for_status()
             return True
