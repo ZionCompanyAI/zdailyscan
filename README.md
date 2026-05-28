@@ -37,6 +37,26 @@ uvicorn app.main:app --reload
 | `MC_API_KEY` | API Key do Mission Control |
 | `MC_URL` | URL do Mission Control (ex: https://orchestrator.zioncompanyai.com.br) |
 
+## Módulos
+
+| Módulo | Descrição |
+|--------|-----------|
+| `app/analyzers/mercado_livre.py` | Busca preços e contagem de resultados no Mercado Livre BR |
+| `app/analyzers/import_calculator.py` | Calcula custo total de importação (II + ICMS, regimes remessa_conforme e normal) |
+| `app/scoring/scorer.py` | Score de viabilidade composto (margem, demanda, oportunidade, tendência, logística) |
+
+### Score de viabilidade
+
+```python
+from app.scoring.scorer import score_product, AliProduct
+
+score = score_product(ali, market, cost)
+# score.viavel: True se score_total >= 0.60
+# score.sell_price_suggestion_brl: total_cost_brl × 2.5
+```
+
+Fórmula: `score = 0.30×Margem + 0.25×Demanda_BR + 0.20×Oportunidade + 0.15×Tendencia + 0.10×Logistica`
+
 ## Testes
 
 ```bash
