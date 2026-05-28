@@ -6,6 +6,8 @@ Scanner diário de oportunidades AliExpress para LojaHi Select — produtos top-
 
 ZDailyScan é um serviço FastAPI que escaneia o AliExpress em busca de produtos com alto potencial para a loja LojaHi Select, gerando relatórios diários via Telegram e integrando-se ao Mission Control.
 
+O scan completo executa automaticamente às **06:00 BRT** (cron `0 9 * * *` UTC): scraper AliExpress → analyzer Mercado Livre → scorer de viabilidade → persistência JSON.
+
 ## Setup local
 
 ```bash
@@ -28,19 +30,25 @@ uvicorn app.main:app --reload
 
 ## Env vars
 
-| Variável | Descrição |
-|----------|-----------|
-| `ALIEXPRESS_APP_KEY` | App Key da API AliExpress |
-| `ALIEXPRESS_APP_SECRET` | App Secret da API AliExpress |
-| `ALIEXPRESS_TRACKING_ID` | Tracking ID para afiliados |
-| `TELEGRAM_BOT_TOKEN` | Token do bot Telegram para notificações |
-| `MC_API_KEY` | API Key do Mission Control |
-| `MC_URL` | URL do Mission Control (ex: https://orchestrator.zioncompanyai.com.br) |
+| Variável | Obrigatória | Descrição |
+|----------|-------------|-----------|
+| `ALIEXPRESS_APP_KEY` | Sim | App Key da API AliExpress Affiliate |
+| `ALIEXPRESS_APP_SECRET` | Sim | App Secret da API AliExpress Affiliate |
+| `ALIEXPRESS_TRACKING_ID` | Sim | Tracking ID para afiliados |
+| `TELEGRAM_BOT_TOKEN` | Sim | Token do bot Telegram para notificações |
+| `MC_API_KEY` | Sim | API Key do Mission Control |
+| `MC_URL` | Sim | URL do Mission Control (ex: https://orchestrator.zioncompanyai.com.br) |
+| `SCAN_API_KEY` | Não | Chave para `POST /scan/run` (default: `test`) |
+| `USD_BRL_RATE` | Não | Taxa de câmbio USD/BRL (default: `5.70`) |
 
 ## Módulos
 
 | Módulo | Descrição |
 |--------|-----------|
+| `app/aliexpress.py` | Cliente AliExpress Affiliate API — busca produtos quentes por categoria |
+| `app/pipeline.py` | Orquestrador do scan: AliExpress → analyzer → scorer, retorna top-20 viáveis |
+| `app/storage.py` | Persistência JSON diária em `data/scans/YYYY-MM-DD.json` |
+| `app/scheduler.py` | `AsyncIOScheduler` registrado no lifespan do FastAPI (cron 09:00 UTC) |
 | `app/analyzers/mercado_livre.py` | Busca preços e contagem de resultados no Mercado Livre BR |
 | `app/analyzers/import_calculator.py` | Calcula custo total de importação (II + ICMS, regimes remessa_conforme e normal) |
 | `app/scoring/scorer.py` | Score de viabilidade composto (margem, demanda, oportunidade, tendência, logística) |
@@ -56,6 +64,28 @@ score = score_product(ali, market, cost)
 ```
 
 Fórmula: `score = 0.30×Margem + 0.25×Demanda_BR + 0.20×Oportunidade + 0.15×Tendencia + 0.10×Logistica`
+
+## Endpoints
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/health` | Health check |
+| `GET` | `/scan/latest` | Retorna o último scan salvo (404 se nenhum) |
+| `GET` | `/scan/{date}` | Retorna scan de data específica (`YYYY-MM-DD`) |
+| `POST` | `/scan/run` | Dispara scan manual imediato (header `x-api-key` obrigatório) |
+
+```bash
+# Disparar scan manual
+curl -X POST http://localhost:8000/scan/run \
+  -H "x-api-key: test"
+# {"status": "started", "scan_id": "..."}
+
+# Consultar último scan
+curl http://localhost:8000/scan/latest
+
+# Consultar scan de data específica
+curl http://localhost:8000/scan/2026-05-28
+```
 
 ## Testes
 
