@@ -6,6 +6,7 @@ from fastapi import BackgroundTasks, FastAPI, Header, HTTPException
 
 from app.pipeline import ScanResult, run_daily_scan
 from app.scheduler import create_scheduler
+from app.scrapers import get_hot_products
 from app.storage import get_latest_scan, load_scan, save_scan
 
 
@@ -58,3 +59,9 @@ async def scan_run(
 
     background_tasks.add_task(_do_scan)
     return {"status": "started", "scan_id": scan_id}
+
+
+@app.get("/scrapers/aliexpress")
+async def scrape_aliexpress(category: str = "200003655", limit: int = 20):
+    products = await get_hot_products(category_id=category, max_results=limit)
+    return {"products": [p.model_dump() for p in products], "count": len(products)}
