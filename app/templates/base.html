@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ZDailyScan{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  {% if user is defined and user %}
+  <nav>
+    <span><strong>ZDailyScan</strong></span>
+    <span>
+      <a href="/dashboard">Relatórios</a>
+      &nbsp;|&nbsp;
+      <a href="/logout">Sair ({{ user }})</a>
+    </span>
+  </nav>
+  {% endif %}
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

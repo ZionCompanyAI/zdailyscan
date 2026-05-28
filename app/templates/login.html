@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Login — ZDailyScan{% endblock %}
+{% block content %}
+<div class="login-box">
+  <h1>ZDailyScan</h1>
+  {% if error %}
+  <p class="error">{{ error }}</p>
+  {% endif %}
+  <form method="post" action="/login">
+    <label>Usuário
+      <input type="text" name="username" required autofocus>
+    </label>
+    <label>Senha
+      <input type="password" name="password" required>
+    </label>
+    <button type="submit">Entrar</button>
+  </form>
+</div>
+{% endblock %}

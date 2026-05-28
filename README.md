@@ -4,9 +4,11 @@ Scanner diário de oportunidades AliExpress para LojaHi Select — produtos top-
 
 ## Descrição
 
-ZDailyScan é um serviço FastAPI que escaneia o AliExpress em busca de produtos com alto potencial para a loja LojaHi Select, gerando relatórios diários via Telegram e integrando-se ao Mission Control.
+ZDailyScan é um serviço FastAPI que escaneia o AliExpress em busca de produtos com alto potencial para a loja LojaHi Select, gerando relatórios diários via Telegram e disponibilizando um dashboard web para visualização e controle.
 
 O scan completo executa automaticamente às **06:00 BRT** (cron `0 9 * * *` UTC): scraper AliExpress → analyzer Mercado Livre → scorer de viabilidade → persistência JSON → relatório Telegram + arquivo Markdown.
+
+O **dashboard web** em `zdailyscan.zioncompanyai.com.br` permite visualizar relatórios históricos, disparar scans manuais e compartilhar acesso via login com usuário/senha.
 
 ## Setup local
 
@@ -40,6 +42,9 @@ uvicorn app.main:app --reload
 | `MC_URL` | Sim | URL do Mission Control (ex: https://orchestrator.zioncompanyai.com.br) |
 | `SCAN_API_KEY` | Não | Chave para `POST /scan/run` (default: `test`) |
 | `USD_BRL_RATE` | Não | Taxa de câmbio USD/BRL (default: `5.70`) |
+| `DASHBOARD_USERNAME` | Não | Usuário do dashboard web (default: `admin`) |
+| `DASHBOARD_PASSWORD` | Sim | Senha do dashboard web |
+| `DASHBOARD_SESSION_SECRET` | Sim | Secret para assinar cookies de sessão (gerar aleatório) |
 
 ## Módulos
 
@@ -54,6 +59,10 @@ uvicorn app.main:app --reload
 | `app/scoring/scorer.py` | Score de viabilidade composto (margem, demanda, oportunidade, tendência, logística) |
 | `app/reporters/telegram_reporter.py` | Envia top 10 oportunidades para Toni via `POST $MC_URL/telegram/reply` |
 | `app/reporters/file_reporter.py` | Salva relatório Markdown em `data/reports/YYYY-MM-DD.md` |
+| `app/routers/auth.py` | Login/logout com cookie de sessão assinado (`itsdangerous`) |
+| `app/routers/dashboard.py` | Dashboard web: lista relatórios, exibe tabela, dispara scan |
+| `app/templates/` | Templates Jinja2: `login.html`, `dashboard.html`, `report.html` |
+| `app/static/style.css` | CSS do dashboard (sem framework externo) |
 
 ### Score de viabilidade
 
@@ -69,12 +78,26 @@ Fórmula: `score = 0.30×Margem + 0.25×Demanda_BR + 0.20×Oportunidade + 0.15×
 
 ## Endpoints
 
+### API JSON
+
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | `GET` | `/health` | Health check |
 | `GET` | `/scan/latest` | Retorna o último scan salvo (404 se nenhum) |
 | `GET` | `/scan/{date}` | Retorna scan de data específica (`YYYY-MM-DD`) |
 | `POST` | `/scan/run` | Dispara scan manual imediato (header `x-api-key` obrigatório) |
+
+### Dashboard web (HTML — requer login)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/` | Redirect para `/dashboard` (logado) ou `/login` |
+| `GET` | `/login` | Formulário de login |
+| `POST` | `/login` | Valida credenciais → seta cookie → redirect `/dashboard` |
+| `GET` | `/logout` | Apaga cookie → redirect `/login` |
+| `GET` | `/dashboard` | Lista relatórios disponíveis por data |
+| `GET` | `/dashboard/{date}` | Tabela de produtos do dia (`YYYY-MM-DD`) |
+| `POST` | `/dashboard/scan` | Dispara scan manual (requer login) |
 
 ```bash
 # Disparar scan manual

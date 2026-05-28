@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Relatório {{ scan.date }} — ZDailyScan{% endblock %}
+{% block content %}
+<h2>Relatório — {{ scan.date }}</h2>
+<p>
+  Escaneados: <strong>{{ scan.total_scanned }}</strong> &nbsp;|&nbsp;
+  Viáveis: <strong>{{ scan.total_viable }}</strong>
+</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Produto</th>
+      <th>Score</th>
+      <th>Custo Imp. (R$)</th>
+      <th>Preço Sugerido (R$)</th>
+      <th>Margem (R$)</th>
+      <th>Demanda</th>
+      <th>Viável</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in scan.products %}
+    <tr>
+      <td>{{ p.title }}</td>
+      <td>{{ "%.2f"|format(p.score_total) }}</td>
+      <td>{{ "%.2f"|format(p.import_cost_brl) }}</td>
+      <td>{{ "%.2f"|format(p.sell_price_suggestion_brl) }}</td>
+      <td>{{ "%.2f"|format(p.margin_brl) }}</td>
+      <td>{{ p.demand_count }}</td>
+      <td>{% if p.viavel %}✅{% else %}❌{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<p><a href="/dashboard">&larr; Voltar</a></p>
+{% endblock %}
