@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações — ZDailyScan{% endblock %}
+
+{% block extra_style %}
+.page-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; }
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+.settings-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.card-heading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.875rem;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-key { color: var(--color-text-muted); flex-shrink: 0; }
+.setting-value {
+  color: var(--color-text);
+  font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+  font-size: 0.8rem;
+  text-align: right;
+  word-break: break-all;
+}
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: calc(var(--radius) / 2);
+  text-transform: uppercase;
+}
+.mode-mock { background: oklch(0.78 0.16 75 / 0.15); color: var(--color-warning); }
+.mode-real { background: oklch(0.72 0.17 145 / 0.15); color: var(--color-success); }
+.cat-list {
+  list-style: none;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.cat-list li {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  padding: 0.3rem 0.5rem;
+  background: var(--color-surface-2);
+  border-radius: calc(var(--radius) / 2);
+}
+.cat-id {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--color-accent);
+  margin-right: 0.4rem;
+}
+.btn {
+  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+#tg-test-result {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  display: none;
+}
+.result-ok { color: var(--color-success); }
+.result-err { color: var(--color-danger); }
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Configurações</h1>
+
+<div class="settings-grid">
+
+  <!-- AliExpress API -->
+  <div class="settings-card">
+    <p class="card-heading">AliExpress API</p>
+    <div class="setting-row">
+      <span class="setting-key">App Key</span>
+      <span class="setting-value">{{ aliexpress_app_key_masked }}</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-key">Tracking ID</span>
+      <span class="setting-value">{{ aliexpress_tracking_id }}</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-key">Modo scraper</span>
+      <span class="setting-value">
+        <span class="mode-badge {% if scraper_mode == 'mock' %}mode-mock{% else %}mode-real{% endif %}">
+          {{ scraper_mode }}
+        </span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Telegram -->
+  <div class="settings-card">
+    <p class="card-heading">Telegram</p>
+    <div class="setting-row">
+      <span class="setting-key">Bot Token</span>
+      <span class="setting-value">{{ telegram_bot_token_masked }}</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-key">Chat ID</span>
+      <span class="setting-value">{{ telegram_chat_id }}</span>
+    </div>
+    <button class="btn" onclick="sendTelegramTest()">Enviar mensagem de teste</button>
+    <div id="tg-test-result"></div>
+  </div>
+
+  <!-- Scan -->
+  <div class="settings-card">
+    <p class="card-heading">Scan</p>
+    <div class="setting-row">
+      <span class="setting-key">Taxa USD/BRL</span>
+      <span class="setting-value">R$ {{ "%.2f"|format(usd_brl_rate) }}</span>
+    </div>
+    <div class="setting-row" style="align-items:flex-start;">
+      <span class="setting-key">Categorias</span>
+      <span></span>
+    </div>
+    <ul class="cat-list">
+      {% for cat in categories %}
+      <li><span class="cat-id">{{ cat.id }}</span>{{ cat.name }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+</div>
+
+<script>
+async function sendTelegramTest() {
+  const el = document.getElementById('tg-test-result');
+  el.style.display = 'block';
+  el.className = '';
+  el.textContent = 'Enviando…';
+  try {
+    const resp = await fetch('/dashboard/settings/telegram-test', { method: 'POST' });
+    const data = await resp.json();
+    if (data.status === 'ok') {
+      el.className = 'result-ok';
+      el.textContent = '✓ Mensagem enviada com sucesso.';
+    } else {
+      el.className = 'result-err';
+      el.textContent = '✗ Erro: ' + (data.detail || 'falha desconhecida');
+    }
+  } catch (e) {
+    el.className = 'result-err';
+    el.textContent = '✗ Erro de rede: ' + e.message;
+  }
+}
+</script>
+{% endblock %}

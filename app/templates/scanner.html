@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Scanner — ZDailyScan{% endblock %}
+
+{% block extra_style %}
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.page-title { font-size: 1.25rem; font-weight: 600; color: var(--color-text); }
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: calc(var(--radius) / 2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.mode-mock { background: oklch(0.78 0.16 75 / 0.15); color: var(--color-warning); }
+.mode-real { background: oklch(0.72 0.17 145 / 0.15); color: var(--color-success); }
+.section { margin-bottom: 2rem; }
+.section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+}
+.trigger-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+.cat-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius) / 2);
+  transition: border-color 0.15s, color 0.15s;
+}
+.cat-label input { accent-color: var(--color-accent); }
+.cat-label:hover { border-color: var(--color-accent); color: var(--color-text); }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--color-accent);
+  color: oklch(0.10 0.02 260);
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--color-accent-hover); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+thead th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+tbody tr { border-bottom: 1px solid var(--color-border); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--color-surface-2); }
+tbody td { padding: 0.65rem 0.75rem; color: var(--color-text); }
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: calc(var(--radius) / 2);
+}
+.status-completed { background: oklch(0.72 0.17 145 / 0.15); color: var(--color-success); }
+.status-failed { background: oklch(0.65 0.20 25 / 0.15); color: var(--color-danger); }
+.status-running { background: oklch(0.78 0.16 75 / 0.15); color: var(--color-warning); }
+.table-link { color: var(--color-accent); text-decoration: none; font-size: 0.8rem; }
+.table-link:hover { text-decoration: underline; }
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="display:flex;align-items:center;gap:0.75rem;">
+    <h1 class="page-title">Scanner de Categorias</h1>
+    <span class="mode-badge {% if scraper_mode == 'mock' %}mode-mock{% else %}mode-real{% endif %}">
+      {% if scraper_mode == 'mock' %}MOCK{% else %}REAL{% endif %}
+    </span>
+  </div>
+</div>
+
+<div class="section">
+  <p class="section-title">Novo Scan</p>
+  <div class="trigger-card">
+    <div>
+      <p style="font-size:0.8rem;color:var(--color-text-muted);margin-bottom:0.6rem;">Categorias</p>
+      <div class="cat-checkboxes">
+        {% for cat in categories %}
+        <label class="cat-label">
+          <input type="checkbox" name="cat" value="{{ cat.id }}" checked>
+          {{ cat.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <form method="post" action="/dashboard/scan/trigger">
+      <button type="submit" class="btn">Iniciar Scan</button>
+    </form>
+  </div>
+</div>
+
+<div class="section">
+  <p class="section-title">Histórico de Scans</p>
+  {% if scans %}
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Produtos viáveis</th>
+        <th>Total escaneado</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for scan in scans %}
+      <tr>
+        <td>{{ scan.date }}</td>
+        <td>{{ scan.product_count }}</td>
+        <td>{{ scan.total_scanned }}</td>
+        <td>
+          <span class="status-badge status-{{ scan.status }}">{{ scan.status }}</span>
+        </td>
+        <td>
+          <a class="table-link" href="/dashboard/{{ scan.date }}">Ver relatório →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <strong>Nenhum scan encontrado</strong>
+    <p style="margin-top:0.4rem;font-size:0.875rem;">Inicie um novo scan para começar.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
