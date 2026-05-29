@@ -38,7 +38,16 @@ async def _scrape_with_crawl4ai(category_id: str, max_results: int) -> list[AliP
     strategy = JsonCssExtractionStrategy(schema)
     run_config = CrawlerRunConfig(extraction_strategy=strategy)
 
+    aliexpress_username = os.environ.get("ALIEXPRESS_USERNAME", "")
+    aliexpress_password = os.environ.get("ALIEXPRESS_PASSWORD", "")
+
     async with AsyncWebCrawler(config=browser_config) as crawler:
+        if aliexpress_username and aliexpress_password:
+            await crawler.authenticate(
+                url="https://www.aliexpress.com/login.htm",
+                username=aliexpress_username,
+                password=aliexpress_password,
+            )
         result = await crawler.arun(url=url, config=run_config)
 
     raw: list[dict] = result.extracted_content or []
