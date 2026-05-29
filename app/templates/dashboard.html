@@ -1,19 +1,84 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — ZDailyScan{% endblock %}
+{% block extra_style %}
+  .page-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+  }
+  .page-header h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  .btn-scan {
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    padding: 0.4rem 0.9rem;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .btn-scan:hover { color: var(--color-text); border-color: var(--color-accent); }
+  .dates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  .date-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: block;
+    padding: 1.25rem 1rem;
+    text-decoration: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .date-card:hover {
+    background: var(--color-surface-2);
+    border-color: var(--color-accent);
+  }
+  .date-card .date-label {
+    color: var(--color-accent);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .date-card .date-sub {
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+    margin-top: 0.25rem;
+  }
+  .empty-state {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    padding: 3rem 0;
+    text-align: center;
+  }
+{% endblock %}
 {% block content %}
-<h2>Relatórios disponíveis</h2>
-
-<form method="post" action="/dashboard/scan">
-  <button type="submit" class="btn-scan">⚡ Force Scan</button>
-</form>
+<div class="page-header">
+  <h2>Relatórios</h2>
+  <form method="post" action="/dashboard/scan">
+    <button type="submit" class="btn-scan">Forçar scan</button>
+  </form>
+</div>
 
 {% if dates %}
-<ul class="report-list">
+<div class="dates-grid">
   {% for date in dates %}
-  <li><a href="/dashboard/{{ date }}">{{ date }}</a></li>
+  <a class="date-card" href="/dashboard/{{ date }}">
+    <div class="date-label">{{ date }}</div>
+    <div class="date-sub">Ver produtos rankeados</div>
+  </a>
   {% endfor %}
-</ul>
+</div>
 {% else %}
-<p>Nenhum relatório encontrado. Execute um scan para começar.</p>
+<div class="empty-state">Nenhum relatório encontrado. Execute um scan para começar.</div>
 {% endif %}
 {% endblock %}
