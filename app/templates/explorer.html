@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Explorer — ZDailyScan{% endblock %}
+
+{% block extra_style %}
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.page-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.filters {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 140px;
+}
+.filter-group label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.filter-group select,
+.filter-group input {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  padding: 0.4rem 0.65rem;
+}
+.filter-group select:focus,
+.filter-group input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--color-accent);
+  color: oklch(0.10 0.02 260);
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--color-accent-hover); }
+.btn-ghost {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.btn-ghost:hover { background: var(--color-surface); }
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+.product-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  transition: border-color 0.15s;
+}
+.product-card:hover { border-color: var(--color-accent); }
+.card-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: calc(var(--radius) / 2);
+}
+.score-high { background: oklch(0.72 0.17 145 / 0.15); color: var(--color-success); }
+.score-mid  { background: oklch(0.78 0.16 75 / 0.15);  color: var(--color-warning); }
+.score-low  { background: oklch(0.65 0.20 25 / 0.15);  color: var(--color-danger); }
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+.stat-value { color: var(--color-text); font-weight: 500; }
+.card-actions { margin-top: auto; }
+.card-link {
+  font-size: 0.8rem;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.card-link:hover { text-decoration: underline; }
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--color-text-muted);
+}
+.empty-state p { margin-top: 0.5rem; font-size: 0.875rem; }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Explorer de Produtos</h1>
+  <form method="post" action="/dashboard/scan/trigger" style="display:inline;">
+    <button type="submit" class="btn">Escanear agora</button>
+  </form>
+</div>
+
+<form method="get" action="/dashboard/explorer">
+  <div class="filters">
+    <div class="filter-group">
+      <label for="sort_by">Ordenar por</label>
+      <select id="sort_by" name="sort_by">
+        <option value="score" {% if sort_by == "score" %}selected{% endif %}>Score</option>
+        <option value="price" {% if sort_by == "price" %}selected{% endif %}>Preço</option>
+        <option value="demand" {% if sort_by == "demand" %}selected{% endif %}>Demanda</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="min_score">Score mínimo (%)</label>
+      <input id="min_score" name="min_score" type="number" min="0" max="100" step="1"
+             value="{{ min_score | int }}" placeholder="0">
+    </div>
+    <div class="filter-group">
+      <label for="limit">Limite</label>
+      <select id="limit" name="limit">
+        <option value="25" {% if limit == 25 %}selected{% endif %}>25</option>
+        <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+        <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-ghost">Filtrar</button>
+  </div>
+</form>
+
+{% if products %}
+<div class="product-grid">
+  {% for p in products %}
+  {% set score_pct = (p.score_total * 100) | round(1) %}
+  {% set score_cls = "score-high" if p.score_total >= 0.70 else ("score-mid" if p.score_total >= 0.40 else "score-low") %}
+  <div class="product-card">
+    <div class="card-title" title="{{ p.title }}">{{ p.title }}</div>
+    <div class="card-meta">
+      <span class="score-badge {{ score_cls }}">Score {{ score_pct }}%</span>
+    </div>
+    <div class="stat-row">
+      <span>Custo importação</span>
+      <span class="stat-value">R$ {{ "%.2f"|format(p.import_cost_brl) }}</span>
+    </div>
+    <div class="stat-row">
+      <span>Sugestão de venda</span>
+      <span class="stat-value">R$ {{ "%.2f"|format(p.sell_price_suggestion_brl) }}</span>
+    </div>
+    <div class="stat-row">
+      <span>Margem estimada</span>
+      <span class="stat-value">R$ {{ "%.2f"|format(p.margin_brl) }}</span>
+    </div>
+    <div class="stat-row">
+      <span>Demanda ML</span>
+      <span class="stat-value">{{ p.demand_count }} anúncios</span>
+    </div>
+    <div class="card-actions">
+      <a class="card-link"
+         href="https://www.aliexpress.com/item/{{ p.product_id }}.html?aff_fcid={{ tracking_id }}"
+         target="_blank" rel="noopener">Ver no AliExpress →</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <strong>Nenhum produto encontrado</strong>
+  <p>Ajuste os filtros ou dispare um novo scan para popular o Explorer.</p>
+</div>
+{% endif %}
+{% endblock %}

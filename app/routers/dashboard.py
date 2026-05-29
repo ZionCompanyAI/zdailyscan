@@ -1,24 +1,67 @@
+import asyncio
 import os
+import uuid as uuid_lib
 
+import app.storage as _storage
 import httpx
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from app.config import Settings
+from app.pipeline import ScanResult, run_daily_scan
 from app.routers.auth import get_current_user
-from app.storage import SCANS_DIR, load_scan
 
 router = APIRouter(prefix="/dashboard")
 templates = Jinja2Templates(directory="app/templates")
 
+_scan_status: dict[str, dict] = {}
+
+CATEGORY_NAMES: dict[str, str] = {
+    "200003655": "Consumer Electronics",
+    "100003070": "Phones & Telecom",
+    "200000783": "Computer & Office",
+    "200000828": "Home & Garden",
+    "200000834": "Sports & Entertainment",
+}
+
 
 def _require_user(request: Request):
-    """Return username or RedirectResponse to /login."""
     user = get_current_user(request)
     if not user:
         return None, RedirectResponse(url="/login", status_code=303)
     return user, None
 
+
+def _load_all_products() -> list[dict]:
+    """Aggregate products from all scans, deduplicating by product_id (keep latest)."""
+    seen: dict[str, dict] = {}
+    if not _storage.SCANS_DIR.exists():
+        return []
+    for scan_file in sorted(_storage.SCANS_DIR.glob("*.json"), reverse=True):
+        try:
+            scan = ScanResult.model_validate_json(scan_file.read_text())
+            for p in scan.products:
+                if p.product_id not in seen:
+                    seen[p.product_id] = p.model_dump()
+        except Exception:
+            continue
+    return list(seen.values())
+
+
+async def _run_scan_background(scan_id: str) -> None:
+    _scan_status[scan_id] = {"status": "running", "product_count": 0}
+    try:
+        result = await run_daily_scan(scan_id)
+        _storage.save_scan(result)
+        _scan_status[scan_id] = {"status": "completed", "product_count": len(result.products)}
+    except Exception:
+        _scan_status[scan_id] = {"status": "failed", "product_count": 0}
+
+
+# ---------------------------------------------------------------------------
+# Dashboard index
+# ---------------------------------------------------------------------------
 
 @router.get("", response_class=HTMLResponse)
 def dashboard_index(request: Request):
@@ -27,9 +70,9 @@ def dashboard_index(request: Request):
         return redirect
 
     dates: list[str] = []
-    if SCANS_DIR.exists():
+    if _storage.SCANS_DIR.exists():
         dates = sorted(
-            [p.stem for p in SCANS_DIR.glob("*.json")],
+            [p.stem for p in _storage.SCANS_DIR.glob("*.json")],
             reverse=True,
         )
 
@@ -38,21 +81,221 @@ def dashboard_index(request: Request):
     )
 
 
-@router.get("/{date}", response_class=HTMLResponse)
-def dashboard_report(request: Request, date: str):
+# ---------------------------------------------------------------------------
+# New HTML pages — must be registered BEFORE /{date} catch-all
+# ---------------------------------------------------------------------------
+
+@router.get("/explorer", response_class=HTMLResponse)
+def dashboard_explorer(
+    request: Request,
+    category_id: str | None = None,
+    min_score: float = 0,
+    sort_by: str = "score",
+    limit: int = 50,
+):
     user, redirect = _require_user(request)
     if redirect:
         return redirect
 
-    scan = load_scan(date)
-    if scan is None:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    products = _load_all_products()
+
+    if min_score > 0:
+        products = [p for p in products if p["score_total"] * 100 >= min_score]
+
+    if sort_by == "price":
+        products.sort(key=lambda p: p["import_cost_brl"])
+    elif sort_by == "demand":
+        products.sort(key=lambda p: p["demand_count"], reverse=True)
+    else:
+        products.sort(key=lambda p: p["score_total"], reverse=True)
+
+    settings = Settings()
 
     return templates.TemplateResponse(
-        request, "report.html", {"scan": scan, "user": user}
+        request,
+        "explorer.html",
+        {
+            "products": products[:limit],
+            "user": user,
+            "category_id": category_id or "",
+            "min_score": min_score,
+            "sort_by": sort_by,
+            "limit": limit,
+            "category_names": CATEGORY_NAMES,
+            "tracking_id": settings.aliexpress_tracking_id,
+        },
     )
 
+
+@router.get("/scanner", response_class=HTMLResponse)
+def dashboard_scanner(request: Request):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+
+    scans = []
+    if _storage.SCANS_DIR.exists():
+        for scan_file in sorted(_storage.SCANS_DIR.glob("*.json"), reverse=True):
+            try:
+                scan = ScanResult.model_validate_json(scan_file.read_text())
+                scans.append({
+                    "scan_id": scan.scan_id,
+                    "date": scan.date,
+                    "product_count": len(scan.products),
+                    "total_scanned": scan.total_scanned,
+                    "total_viable": scan.total_viable,
+                    "status": "completed",
+                })
+            except Exception:
+                continue
+
+    return templates.TemplateResponse(
+        request,
+        "scanner.html",
+        {
+            "scans": scans,
+            "user": user,
+            "scraper_mode": os.environ.get("SCRAPER_MODE", "crawl4ai"),
+            "categories": [{"id": k, "name": v} for k, v in CATEGORY_NAMES.items()],
+        },
+    )
+
+
+@router.get("/settings", response_class=HTMLResponse)
+def dashboard_settings(request: Request):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+
+    settings = Settings()
+
+    def _mask(value: str, visible: int = 4) -> str:
+        if not value or len(value) <= visible:
+            return "***"
+        return value[:visible] + "***"
+
+    return templates.TemplateResponse(
+        request,
+        "settings.html",
+        {
+            "user": user,
+            "aliexpress_app_key_masked": _mask(settings.aliexpress_app_key),
+            "aliexpress_tracking_id": settings.aliexpress_tracking_id,
+            "telegram_bot_token_masked": _mask(settings.telegram_bot_token),
+            "telegram_chat_id": settings.telegram_chat_id,
+            "scraper_mode": os.environ.get("SCRAPER_MODE", "crawl4ai"),
+            "usd_brl_rate": settings.usd_brl_rate,
+            "categories": [{"id": k, "name": v} for k, v in CATEGORY_NAMES.items()],
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# JSON API endpoints
+# ---------------------------------------------------------------------------
+
+@router.get("/products")
+def dashboard_products(
+    request: Request,
+    category_id: str | None = None,
+    min_score: float = 0,
+    sort_by: str = "score",
+    limit: int = 50,
+):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+
+    products = _load_all_products()
+
+    if min_score > 0:
+        products = [p for p in products if p["score_total"] * 100 >= min_score]
+
+    if sort_by == "price":
+        products.sort(key=lambda p: p["import_cost_brl"])
+    elif sort_by == "demand":
+        products.sort(key=lambda p: p["demand_count"], reverse=True)
+    else:
+        products.sort(key=lambda p: p["score_total"], reverse=True)
+
+    return {"products": products[:limit]}
+
+
+@router.get("/scans")
+def dashboard_scans(request: Request):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+
+    scans = []
+    if _storage.SCANS_DIR.exists():
+        for scan_file in sorted(_storage.SCANS_DIR.glob("*.json"), reverse=True):
+            try:
+                scan = ScanResult.model_validate_json(scan_file.read_text())
+                scans.append({
+                    "scan_id": scan.scan_id,
+                    "date": scan.date,
+                    "product_count": len(scan.products),
+                    "status": "completed",
+                })
+            except Exception:
+                continue
+
+    return {"scans": scans}
+
+
+@router.post("/scan/trigger")
+async def dashboard_scan_trigger(request: Request):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+
+    scan_id = str(uuid_lib.uuid4())
+    asyncio.create_task(_run_scan_background(scan_id))
+
+    return {"status": "started", "scan_id": scan_id}
+
+
+@router.get("/scan/{scan_id}/status")
+def dashboard_scan_status(request: Request, scan_id: str):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+
+    status = _scan_status.get(scan_id)
+    if status is None:
+        raise HTTPException(status_code=404, detail="scan_id not found")
+
+    return {"scan_id": scan_id, **status}
+
+
+@router.post("/settings/telegram-test")
+async def dashboard_telegram_test(request: Request):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+
+    settings = Settings()
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{settings.mc_url}/telegram/reply",
+                headers={"x-api-key": settings.mc_api_key},
+                json={
+                    "chat_id": settings.telegram_chat_id,
+                    "text": "🔔 ZDailyScan — teste de configuração OK",
+                    "parse_mode": "Markdown",
+                },
+            )
+            resp.raise_for_status()
+            return {"status": "ok"}
+    except Exception as e:
+        return JSONResponse(status_code=200, content={"status": "error", "detail": str(e)})
+
+
+# ---------------------------------------------------------------------------
+# Legacy trigger (keep for backwards compat)
+# ---------------------------------------------------------------------------
 
 @router.post("/scan")
 def dashboard_scan(request: Request):
@@ -71,3 +314,22 @@ def dashboard_scan(request: Request):
         pass
 
     return RedirectResponse(url="/dashboard", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Report by date — catch-all (must be LAST)
+# ---------------------------------------------------------------------------
+
+@router.get("/{date}", response_class=HTMLResponse)
+def dashboard_report(request: Request, date: str):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+
+    scan = _storage.load_scan(date)
+    if scan is None:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+
+    return templates.TemplateResponse(
+        request, "report.html", {"scan": scan, "user": user}
+    )

@@ -4,6 +4,9 @@
 (nenhum)
 
 ## Concluído (adicionados nesta sessão)
+- TASK-036: Explorer de Produtos + Scanner + Settings — Fase 1 UI — arquivado 2026-05-29
+
+## Concluído (adicionados nesta sessão)
 
 ## Concluído
 - TASK-001: Estrutura base do projeto ZDailyScan — arquivado 2026-05-28
