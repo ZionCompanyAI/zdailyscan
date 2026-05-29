@@ -253,7 +253,7 @@ async def dashboard_scan_trigger(request: Request):
     scan_id = str(uuid_lib.uuid4())
     asyncio.create_task(_run_scan_background(scan_id))
 
-    return {"status": "started", "scan_id": scan_id}
+    return RedirectResponse(url="/dashboard/scanner", status_code=303)
 
 
 @router.get("/scan/{scan_id}/status")

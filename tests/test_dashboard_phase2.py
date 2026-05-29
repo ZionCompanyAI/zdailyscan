@@ -294,17 +294,14 @@ def test_scan_trigger_without_auth_redirects(monkeypatch):
     assert resp.status_code in (302, 303, 307)
 
 
-def test_scan_trigger_returns_started(monkeypatch):
+def test_scan_trigger_redirects_to_scanner(monkeypatch):
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     with patch("app.routers.dashboard.run_daily_scan", new_callable=AsyncMock) as mock_scan:
         mock_scan.return_value = None
         resp = client.post("/dashboard/scan/trigger", cookies={"session": cookie})
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["status"] == "started"
-    assert "scan_id" in data
-    assert len(data["scan_id"]) > 0
+    assert resp.status_code == 303
+    assert resp.headers["location"] == "/dashboard/scanner"
 
 
 # ---------------------------------------------------------------------------
@@ -319,16 +316,18 @@ def test_scan_status_unknown_returns_not_found(monkeypatch):
 
 
 def test_scan_status_returns_running_after_trigger(monkeypatch):
+    import uuid as uuid_lib
+    known_uuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
-    with patch("app.routers.dashboard.run_daily_scan", new_callable=AsyncMock) as mock_scan:
+    with patch("app.routers.dashboard.run_daily_scan", new_callable=AsyncMock) as mock_scan, \
+         patch("app.routers.dashboard.uuid_lib.uuid4", return_value=uuid_lib.UUID(known_uuid)):
         mock_scan.return_value = None
-        trigger_resp = client.post("/dashboard/scan/trigger", cookies={"session": cookie})
-    scan_id = trigger_resp.json()["scan_id"]
-    status_resp = client.get(f"/dashboard/scan/{scan_id}/status", cookies={"session": cookie})
+        client.post("/dashboard/scan/trigger", cookies={"session": cookie})
+    status_resp = client.get(f"/dashboard/scan/{known_uuid}/status", cookies={"session": cookie})
     assert status_resp.status_code == 200
     data = status_resp.json()
-    assert data["scan_id"] == scan_id
+    assert data["scan_id"] == known_uuid
     assert data["status"] in ("running", "completed", "failed")
 
 
