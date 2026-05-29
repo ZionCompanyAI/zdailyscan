@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import uuid as uuid_lib
 
@@ -11,6 +12,8 @@ from fastapi.templating import Jinja2Templates
 from app.config import Settings
 from app.pipeline import CATEGORIES, ScanResult, get_active_categories, run_daily_scan
 from app.routers.auth import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/dashboard")
 templates = Jinja2Templates(directory="app/templates")
@@ -211,7 +214,7 @@ async def _persist_railway_var(name: str, value: str) -> None:
     }
     """
     async with httpx.AsyncClient(timeout=10.0) as client:
-        await client.post(
+        response = await client.post(
             "https://backboard.railway.app/graphql/v2",
             headers={"Authorization": f"Bearer {settings.railway_api_token}"},
             json={
@@ -227,6 +230,11 @@ async def _persist_railway_var(name: str, value: str) -> None:
                 },
             },
         )
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.error("Railway API error: %s", e)
+            raise HTTPException(status_code=502, detail="Falha ao salvar credencial no Railway")
 
 
 @router.post("/settings/aliexpress")
