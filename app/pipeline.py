@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid
 from datetime import date
 
@@ -22,6 +23,16 @@ CATEGORIES: list[str] = [
 ]
 
 
+def get_active_categories() -> list[str]:
+    """Return active category IDs from SCAN_CATEGORIES env var, or all defaults."""
+    raw = os.environ.get("SCAN_CATEGORIES", "")
+    if not raw.strip():
+        return CATEGORIES
+    valid = set(CATEGORIES)
+    filtered = [c.strip() for c in raw.split(",") if c.strip() in valid]
+    return filtered if filtered else CATEGORIES
+
+
 class ScanResult(BaseModel):
     scan_id: str
     date: str
@@ -36,7 +47,7 @@ async def run_daily_scan(scan_id: str | None = None) -> ScanResult:
     today = date.today().isoformat()
     all_scores: list[ProductScore] = []
 
-    for category_id in CATEGORIES:
+    for category_id in get_active_categories():
         products = await get_hot_products(category_id)
         for product in products:
             market = await search_br_market(product.title)
