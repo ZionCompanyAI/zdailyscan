@@ -4,6 +4,8 @@ import os
 import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 os.environ.setdefault("ALIEXPRESS_APP_KEY", "test")
 os.environ.setdefault("ALIEXPRESS_APP_SECRET", "test")
 os.environ.setdefault("ALIEXPRESS_TRACKING_ID", "testtrack")
@@ -217,6 +219,7 @@ def test_settings_aliexpress_post_empty_password_does_not_overwrite(monkeypatch)
 # 4. _persist_railway_var — integração Railway API
 # ---------------------------------------------------------------------------
 
+@pytest.mark.asyncio
 async def test_persist_railway_var_calls_railway_api(monkeypatch):
     """_persist_railway_var deve chamar Railway GraphQL API quando token configurado."""
     monkeypatch.setenv("RAILWAY_API_TOKEN", "rw-token-123")
@@ -243,6 +246,7 @@ async def test_persist_railway_var_calls_railway_api(monkeypatch):
     assert "backboard.railway.app" in call_kwargs[0][0]
 
 
+@pytest.mark.asyncio
 async def test_persist_railway_var_noop_without_token(monkeypatch):
     """_persist_railway_var deve ser no-op se RAILWAY_API_TOKEN não configurado."""
     monkeypatch.delenv("RAILWAY_API_TOKEN", raising=False)
@@ -254,6 +258,7 @@ async def test_persist_railway_var_noop_without_token(monkeypatch):
     mock_client_cls.assert_not_called()
 
 
+@pytest.mark.asyncio
 async def test_persist_railway_var_noop_without_service_id(monkeypatch):
     """_persist_railway_var deve ser no-op se RAILWAY_SERVICE_ID não configurado."""
     monkeypatch.setenv("RAILWAY_API_TOKEN", "rw-token-123")
@@ -296,6 +301,7 @@ def _make_crawl4ai_mocks():
     return mock_crawl4ai, mock_extraction, mock_crawler
 
 
+@pytest.mark.asyncio
 async def test_scraper_authenticates_when_credentials_set(monkeypatch):
     """_scrape_with_crawl4ai deve chamar crawler.authenticate quando credenciais configuradas."""
     monkeypatch.setenv("ALIEXPRESS_USERNAME", "user@example.com")
@@ -316,6 +322,7 @@ async def test_scraper_authenticates_when_credentials_set(monkeypatch):
     assert "aliexpress.com" in call_kwargs[1]["url"]
 
 
+@pytest.mark.asyncio
 async def test_scraper_skips_auth_when_no_credentials(monkeypatch):
     """_scrape_with_crawl4ai não deve chamar authenticate quando credenciais ausentes."""
     monkeypatch.delenv("ALIEXPRESS_USERNAME", raising=False)
@@ -332,6 +339,7 @@ async def test_scraper_skips_auth_when_no_credentials(monkeypatch):
     mock_crawler.authenticate.assert_not_called()
 
 
+@pytest.mark.asyncio
 async def test_scraper_skips_auth_when_only_username_set(monkeypatch):
     """Autenticação requer AMBAS as variáveis — apenas username não autentica."""
     monkeypatch.setenv("ALIEXPRESS_USERNAME", "user@example.com")
