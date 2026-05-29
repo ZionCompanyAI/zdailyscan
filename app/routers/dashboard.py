@@ -4,12 +4,12 @@ import uuid as uuid_lib
 
 import app.storage as _storage
 import httpx
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.config import Settings
-from app.pipeline import ScanResult, run_daily_scan
+from app.pipeline import CATEGORIES, ScanResult, get_active_categories, run_daily_scan
 from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/dashboard")
@@ -174,20 +174,38 @@ def dashboard_settings(request: Request):
             return "***"
         return value[:visible] + "***"
 
+    active_ids = set(get_active_categories())
+    all_categories = [
+        {"id": k, "name": v, "active": k in active_ids}
+        for k, v in CATEGORY_NAMES.items()
+    ]
     return templates.TemplateResponse(
         request,
         "settings.html",
         {
             "user": user,
-            "aliexpress_app_key_masked": _mask(settings.aliexpress_app_key),
-            "aliexpress_tracking_id": settings.aliexpress_tracking_id,
             "telegram_bot_token_masked": _mask(settings.telegram_bot_token),
             "telegram_chat_id": settings.telegram_chat_id,
             "scraper_mode": os.environ.get("SCRAPER_MODE", "crawl4ai"),
             "usd_brl_rate": settings.usd_brl_rate,
-            "categories": [{"id": k, "name": v} for k, v in CATEGORY_NAMES.items()],
+            "categories": all_categories,
         },
     )
+
+
+@router.post("/settings/categories")
+async def dashboard_settings_categories(
+    request: Request,
+    categories: list[str] = Form(default=[]),
+):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+
+    valid = set(CATEGORIES)
+    selected = [c for c in categories if c in valid]
+    os.environ["SCAN_CATEGORIES"] = ",".join(selected)
+    return RedirectResponse(url="/dashboard/settings", status_code=303)
 
 
 # ---------------------------------------------------------------------------

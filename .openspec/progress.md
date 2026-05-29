@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #42)
+- TASK-042: Settings — remover API AliExpress, categorias configuráveis, card crawl4ai — arquivado 2026-05-29
+
 ## Concluído (issue #40)
 - TASK-040: fix POST /scan/trigger — redireciona 303 para /scanner — arquivado 2026-05-29
 
