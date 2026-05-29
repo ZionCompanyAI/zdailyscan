@@ -151,6 +151,30 @@
     </div>
   </div>
 
+  <!-- AliExpress — credenciais de login -->
+  <div class="settings-card">
+    <p class="card-heading">AliExpress</p>
+    <form method="POST" action="/dashboard/settings/aliexpress">
+      <div style="display:flex; flex-direction:column; gap:0.75rem; margin-bottom:0.25rem;">
+        <div style="display:flex; flex-direction:column; gap:0.3rem;">
+          <label style="font-size:0.8rem; color:var(--color-text-muted);">Username / E-mail</label>
+          <input type="text" name="aliexpress_username"
+                 value="{{ aliexpress_username }}"
+                 autocomplete="username"
+                 style="background:var(--color-surface-2); border:1px solid var(--color-border); border-radius:var(--radius); padding:0.45rem 0.65rem; font-size:0.875rem; color:var(--color-text); width:100%; box-sizing:border-box;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:0.3rem;">
+          <label style="font-size:0.8rem; color:var(--color-text-muted);">Senha</label>
+          <input type="password" name="aliexpress_password"
+                 placeholder="{{ aliexpress_password_masked }}"
+                 autocomplete="current-password"
+                 style="background:var(--color-surface-2); border:1px solid var(--color-border); border-radius:var(--radius); padding:0.45rem 0.65rem; font-size:0.875rem; color:var(--color-text); width:100%; box-sizing:border-box;">
+        </div>
+      </div>
+      <button type="submit" class="btn">Salvar</button>
+    </form>
+  </div>
+
   <!-- Telegram -->
   <div class="settings-card">
     <p class="card-heading">Telegram</p>
