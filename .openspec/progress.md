@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #46)
+- TASK-046: AliExpress login credentials na página Settings — arquivado 2026-05-29
+
 ## Concluído (issue #42)
 - TASK-042: Settings — remover API AliExpress, categorias configuráveis, card crawl4ai — arquivado 2026-05-29
 
