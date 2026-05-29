@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #40)
+- TASK-040: fix POST /scan/trigger — redireciona 303 para /scanner — arquivado 2026-05-29
+
 ## Concluído (issue #38)
 - TASK-038: Mobile-first redesign — todas as páginas do dashboard — arquivado 2026-05-29
 
