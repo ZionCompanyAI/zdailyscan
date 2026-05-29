@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #38)
+- TASK-038: Mobile-first redesign — todas as páginas do dashboard — arquivado 2026-05-29
+
 ## Concluído (adicionados nesta sessão)
 - TASK-036: Explorer de Produtos + Scanner + Settings — Fase 1 UI — arquivado 2026-05-29
 

@@ -64,22 +64,28 @@
 .cat-label input { accent-color: var(--color-accent); }
 .cat-label:hover { border-color: var(--color-accent); color: var(--color-text); }
 .btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
+  width: 100%;
   background: var(--color-accent);
   color: oklch(0.10 0.02 260);
   border: none;
   border-radius: var(--radius);
   font-family: var(--font-sans);
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
-  padding: 0.5rem 1.25rem;
+  padding: 0.65rem 1.25rem;
+  min-height: 44px;
   cursor: pointer;
   text-decoration: none;
   transition: background 0.15s;
 }
 .btn:hover { background: var(--color-accent-hover); }
+@media (min-width: 600px) {
+  .btn { width: auto; display: inline-flex; }
+}
 table {
   width: 100%;
   border-collapse: collapse;
@@ -121,6 +127,32 @@ tbody td { padding: 0.65rem 0.75rem; color: var(--color-text); }
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
 }
+/* Mobile: table → stack cards */
+.scan-table-wrap { overflow-x: auto; }
+@media (max-width: 599px) {
+  .scan-table-wrap table,
+  .scan-table-wrap thead,
+  .scan-table-wrap tbody,
+  .scan-table-wrap tr,
+  .scan-table-wrap th { display: none; }
+  .scan-table-wrap td { display: block; border: none; padding: 0.25rem 0; }
+  .scan-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+  .scan-card-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    padding: 0.2rem 0;
+    color: var(--color-text-muted);
+  }
+  .scan-card-row span:last-child { color: var(--color-text); }
+}
 {% endblock %}
 
 {% block content %}
@@ -156,32 +188,44 @@ tbody td { padding: 0.65rem 0.75rem; color: var(--color-text); }
 <div class="section">
   <p class="section-title">Histórico de Scans</p>
   {% if scans %}
-  <table>
-    <thead>
-      <tr>
-        <th>Data</th>
-        <th>Produtos viáveis</th>
-        <th>Total escaneado</th>
-        <th>Status</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for scan in scans %}
-      <tr>
-        <td>{{ scan.date }}</td>
-        <td>{{ scan.product_count }}</td>
-        <td>{{ scan.total_scanned }}</td>
-        <td>
-          <span class="status-badge status-{{ scan.status }}">{{ scan.status }}</span>
-        </td>
-        <td>
-          <a class="table-link" href="/dashboard/{{ scan.date }}">Ver relatório →</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="scan-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Produtos viáveis</th>
+          <th>Total escaneado</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for scan in scans %}
+        <tr>
+          <td>{{ scan.date }}</td>
+          <td>{{ scan.product_count }}</td>
+          <td>{{ scan.total_scanned }}</td>
+          <td>
+            <span class="status-badge status-{{ scan.status }}">{{ scan.status }}</span>
+          </td>
+          <td>
+            <a class="table-link" href="/dashboard/{{ scan.date }}">Ver relatório →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <!-- Mobile cards (shown below 600px via CSS) -->
+  {% for scan in scans %}
+  <div class="scan-card">
+    <div class="scan-card-row"><span>Data</span><span>{{ scan.date }}</span></div>
+    <div class="scan-card-row"><span>Produtos viáveis</span><span>{{ scan.product_count }}</span></div>
+    <div class="scan-card-row"><span>Total escaneado</span><span>{{ scan.total_scanned }}</span></div>
+    <div class="scan-card-row"><span>Status</span><span><span class="status-badge status-{{ scan.status }}">{{ scan.status }}</span></span></div>
+    <div class="scan-card-row"><span></span><a class="table-link" href="/dashboard/{{ scan.date }}">Ver relatório →</a></div>
+  </div>
+  {% endfor %}
   {% else %}
   <div class="empty-state">
     <strong>Nenhum scan encontrado</strong>

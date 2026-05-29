@@ -16,22 +16,45 @@
   font-weight: 600;
   color: var(--color-text);
 }
-.filters {
+.filter-details {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.filter-toggle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.filter-toggle::after {
+  content: '+';
+  font-size: 1rem;
+  color: var(--color-accent);
+  line-height: 1;
+}
+details[open] .filter-toggle::after { content: '−'; }
+.filters {
+  padding: 0.75rem 1.25rem 1rem;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
   align-items: flex-end;
-  margin-bottom: 1.5rem;
 }
 .filter-group {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  min-width: 140px;
+  flex: 1 1 140px;
 }
 .filter-group label {
   font-size: 0.75rem;
@@ -42,13 +65,15 @@
 }
 .filter-group select,
 .filter-group input {
+  width: 100%;
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 0.875rem;
-  padding: 0.4rem 0.65rem;
+  font-size: 1rem;
+  padding: 0.5rem 0.65rem;
+  min-height: 44px;
 }
 .filter-group select:focus,
 .filter-group input:focus {
@@ -80,8 +105,14 @@
 .btn-ghost:hover { background: var(--color-surface); }
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
+}
+@media (min-width: 600px) {
+  .product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .product-grid { grid-template-columns: repeat(3, 1fr); }
 }
 .product-card {
   background: var(--color-surface);
@@ -153,30 +184,33 @@
 </div>
 
 <form method="get" action="/dashboard/explorer">
-  <div class="filters">
-    <div class="filter-group">
-      <label for="sort_by">Ordenar por</label>
-      <select id="sort_by" name="sort_by">
-        <option value="score" {% if sort_by == "score" %}selected{% endif %}>Score</option>
-        <option value="price" {% if sort_by == "price" %}selected{% endif %}>Preço</option>
-        <option value="demand" {% if sort_by == "demand" %}selected{% endif %}>Demanda</option>
-      </select>
+  <details class="filter-details">
+    <summary class="filter-toggle">Filtros</summary>
+    <div class="filters">
+      <div class="filter-group">
+        <label for="sort_by">Ordenar por</label>
+        <select id="sort_by" name="sort_by">
+          <option value="score" {% if sort_by == "score" %}selected{% endif %}>Score</option>
+          <option value="price" {% if sort_by == "price" %}selected{% endif %}>Preço</option>
+          <option value="demand" {% if sort_by == "demand" %}selected{% endif %}>Demanda</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="min_score">Score mínimo (%)</label>
+        <input id="min_score" name="min_score" type="number" min="0" max="100" step="1"
+               value="{{ min_score | int }}" placeholder="0">
+      </div>
+      <div class="filter-group">
+        <label for="limit">Limite</label>
+        <select id="limit" name="limit">
+          <option value="25" {% if limit == 25 %}selected{% endif %}>25</option>
+          <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+          <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-ghost">Filtrar</button>
     </div>
-    <div class="filter-group">
-      <label for="min_score">Score mínimo (%)</label>
-      <input id="min_score" name="min_score" type="number" min="0" max="100" step="1"
-             value="{{ min_score | int }}" placeholder="0">
-    </div>
-    <div class="filter-group">
-      <label for="limit">Limite</label>
-      <select id="limit" name="limit">
-        <option value="25" {% if limit == 25 %}selected{% endif %}>25</option>
-        <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
-        <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
-      </select>
-    </div>
-    <button type="submit" class="btn btn-ghost">Filtrar</button>
-  </div>
+  </details>
 </form>
 
 {% if products %}
