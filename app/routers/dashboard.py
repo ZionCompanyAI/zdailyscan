@@ -189,8 +189,62 @@ def dashboard_settings(request: Request):
             "scraper_mode": os.environ.get("SCRAPER_MODE", "crawl4ai"),
             "usd_brl_rate": settings.usd_brl_rate,
             "categories": all_categories,
+            "aliexpress_username": settings.aliexpress_username,
+            "aliexpress_password_masked": _mask(settings.aliexpress_password),
         },
     )
+
+
+async def _persist_railway_var(name: str, value: str) -> None:
+    """Upsert a Railway env var via GraphQL API. No-op if Railway creds not configured."""
+    settings = Settings()
+    if not all([
+        settings.railway_api_token,
+        settings.railway_service_id,
+        settings.railway_environment_id,
+        settings.railway_project_id,
+    ]):
+        return
+    mutation = """
+    mutation variableUpsert($input: VariableUpsertInput!) {
+      variableUpsert(input: $input)
+    }
+    """
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        await client.post(
+            "https://backboard.railway.app/graphql/v2",
+            headers={"Authorization": f"Bearer {settings.railway_api_token}"},
+            json={
+                "query": mutation,
+                "variables": {
+                    "input": {
+                        "projectId": settings.railway_project_id,
+                        "serviceId": settings.railway_service_id,
+                        "environmentId": settings.railway_environment_id,
+                        "name": name,
+                        "value": value,
+                    }
+                },
+            },
+        )
+
+
+@router.post("/settings/aliexpress")
+async def dashboard_settings_aliexpress(
+    request: Request,
+    aliexpress_username: str = Form(default=""),
+    aliexpress_password: str = Form(default=""),
+):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+    if aliexpress_username:
+        os.environ["ALIEXPRESS_USERNAME"] = aliexpress_username
+        await _persist_railway_var("ALIEXPRESS_USERNAME", aliexpress_username)
+    if aliexpress_password:
+        os.environ["ALIEXPRESS_PASSWORD"] = aliexpress_password
+        await _persist_railway_var("ALIEXPRESS_PASSWORD", aliexpress_password)
+    return RedirectResponse(url="/dashboard/settings", status_code=303)
 
 
 @router.post("/settings/categories")
