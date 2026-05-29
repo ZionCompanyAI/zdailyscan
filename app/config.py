@@ -16,4 +16,12 @@ class Settings(BaseSettings):
     dashboard_password: str
     dashboard_session_secret: str
 
+    aliexpress_username: str = ""
+    aliexpress_password: str = ""
+
+    railway_api_token: str = ""
+    railway_service_id: str = ""
+    railway_environment_id: str = ""
+    railway_project_id: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
