@@ -230,7 +230,7 @@ async def test_pipeline_run_uses_active_categories(monkeypatch):
         patch("app.pipeline.save_daily_report"),
     ):
         from app.pipeline import run_daily_scan
-        result = await run_daily_scan()
+        await run_daily_scan()
 
     # Com SCAN_CATEGORIES=200003655 só 1 categoria deve ser processada
     assert calls == ["200003655"]
