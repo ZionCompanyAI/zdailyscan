@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #72)
+- TASK-072: feat(scraper) — AliExpress session cookie injection, remove username/password — arquivado 2026-05-30
+
 ## Concluído (issue #57)
 - TASK-057: feat(dashboard) — AliExpress credentials form in settings — arquivado 2026-05-30
 
