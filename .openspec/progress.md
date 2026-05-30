@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #12)
+- TASK-012: CI workflow — habilitar GitHub Merge Queue — arquivado 2026-05-29
+
 ## Concluído (issue #42)
 - TASK-042: Settings — remover API AliExpress, categorias configuráveis, card crawl4ai — arquivado 2026-05-29
 
