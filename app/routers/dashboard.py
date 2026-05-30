@@ -155,6 +155,7 @@ def dashboard_scanner(request: Request):
             except Exception:
                 continue
 
+    active_ids = set(get_active_categories())
     return templates.TemplateResponse(
         request,
         "scanner.html",
@@ -162,7 +163,10 @@ def dashboard_scanner(request: Request):
             "scans": scans,
             "user": user,
             "scraper_mode": os.environ.get("SCRAPER_MODE", "crawl4ai"),
-            "categories": [{"id": k, "name": v} for k, v in CATEGORY_NAMES.items()],
+            "categories": [
+                {"id": k, "name": v, "active": k in active_ids}
+                for k, v in CATEGORY_NAMES.items()
+            ],
         },
     )
 
