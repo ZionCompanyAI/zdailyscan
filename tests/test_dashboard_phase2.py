@@ -315,17 +315,19 @@ def test_scan_trigger_without_auth_redirects(monkeypatch):
     assert resp.status_code in (302, 303, 307)
 
 
-def test_scan_trigger_redirects_to_scanner(monkeypatch):
+def test_scan_trigger_returns_scan_id(monkeypatch):
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     with patch("app.routers.dashboard.run_daily_scan", new_callable=AsyncMock) as mock_scan:
         mock_scan.return_value = None
         resp = client.post("/dashboard/scan/trigger", cookies={"session": cookie})
-    assert resp.status_code == 303
-    assert resp.headers["location"] == "/dashboard/scanner"
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "scan_id" in body
+    assert body["status"] == "running"
 
 
-def test_scan_trigger_with_categories_returns_303(monkeypatch):
+def test_scan_trigger_with_categories_returns_scan_id(monkeypatch):
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     with patch("app.routers.dashboard.run_daily_scan", new_callable=AsyncMock) as mock_scan:
@@ -335,8 +337,10 @@ def test_scan_trigger_with_categories_returns_303(monkeypatch):
             data={"categories": ["200003655", "100003070"]},
             cookies={"session": cookie},
         )
-    assert resp.status_code == 303
-    assert resp.headers["location"] == "/dashboard/scanner"
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "scan_id" in body
+    assert body["status"] == "running"
 
 
 # ---------------------------------------------------------------------------
@@ -396,3 +400,4 @@ def test_telegram_test_with_auth_returns_json(monkeypatch):
     assert resp.status_code == 200
     data = resp.json()
     assert "status" in data
+
