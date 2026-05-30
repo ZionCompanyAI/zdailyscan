@@ -103,14 +103,19 @@ async def get_hot_products(
     category_id: str, min_rating: float = 0.0, max_results: int = 100
 ) -> list[AliProduct]:
     mode = os.environ.get("SCRAPER_MODE", "crawl4ai")
+    firecrawl_url = os.environ.get("FIRECRAWL_URL", "")
+    session_cookies = os.environ.get("ALIEXPRESS_SESSION_COOKIES", "")
 
-    if mode == "mock":
+    if mode == "firecrawl":
+        if firecrawl_url:
+            products = await get_products_via_firecrawl(category_id, firecrawl_url, max_results)
+            filtered = [p for p in products if p.rating >= min_rating]
+            return filtered[:max_results]
+        # no FIRECRAWL_URL: fall through to default (crawl4ai)
+    elif mode == "mock":
         from app.scrapers.mock import get_mock_products
 
         return get_mock_products(category_id, min_rating, max_results)
-
-    firecrawl_url = os.environ.get("FIRECRAWL_URL", "")
-    session_cookies = os.environ.get("ALIEXPRESS_SESSION_COOKIES", "")
 
     if session_cookies:
         # cookies present: crawl4ai supports injection; firecrawl is the fallback
