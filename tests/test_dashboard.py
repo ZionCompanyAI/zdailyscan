@@ -23,11 +23,13 @@ def _make_client(monkeypatch):
     monkeypatch.setenv("DASHBOARD_SESSION_SECRET", "test-secret-key")
     from fastapi.testclient import TestClient
     from app.main import app
+
     return TestClient(app, follow_redirects=False)
 
 
 def _signed_cookie(username: str = "admin") -> str:
     from itsdangerous import URLSafeSerializer
+
     s = URLSafeSerializer("test-secret-key", salt="session")
     return s.dumps({"user": username})
 
@@ -36,9 +38,11 @@ def _signed_cookie(username: str = "admin") -> str:
 # 1. Import smoke test
 # ---------------------------------------------------------------------------
 
+
 def test_import_routers():
     from app.routers.auth import router
     from app.routers.dashboard import router as dr
+
     assert router is not None
     assert dr is not None
 
@@ -46,6 +50,7 @@ def test_import_routers():
 # ---------------------------------------------------------------------------
 # 2. Auth / redirect
 # ---------------------------------------------------------------------------
+
 
 def test_root_without_cookie_redirects_to_login(monkeypatch):
     client = _make_client(monkeypatch)
@@ -79,6 +84,7 @@ def test_dashboard_scan_without_cookie_redirects_to_login(monkeypatch):
 # 3. Login page
 # ---------------------------------------------------------------------------
 
+
 def test_login_page_returns_200(monkeypatch):
     client = _make_client(monkeypatch)
     resp = client.get("/login")
@@ -103,8 +109,7 @@ def test_login_post_invalid_creds_does_not_set_cookie(monkeypatch):
 def test_logout_clears_cookie_and_redirects(monkeypatch):
     client = _make_client(monkeypatch)
     # First, log in
-    client.post("/login", data={"username": "admin", "password": "secret"},
-                follow_redirects=True)
+    client.post("/login", data={"username": "admin", "password": "secret"}, follow_redirects=True)
     # Logout
     resp = client.get("/logout")
     assert resp.status_code in (302, 303, 307)
@@ -115,6 +120,7 @@ def test_logout_clears_cookie_and_redirects(monkeypatch):
 # 4. Dashboard with valid session
 # ---------------------------------------------------------------------------
 
+
 def test_dashboard_with_valid_session_returns_200(monkeypatch):
     client = _make_client(monkeypatch)
     cookie = _signed_cookie("admin")
@@ -124,6 +130,7 @@ def test_dashboard_with_valid_session_returns_200(monkeypatch):
 
 def test_dashboard_date_not_found_returns_404(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie("admin")
@@ -135,9 +142,11 @@ def test_dashboard_date_not_found_returns_404(monkeypatch, tmp_path):
 # 5. Report table renders correct fields
 # ---------------------------------------------------------------------------
 
+
 def test_report_renders_product_fields(monkeypatch, tmp_path):
     """GET /dashboard/{date} deve renderizar título, score, margem e viável."""
     import app.storage as storage_module
+
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
     monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
@@ -175,14 +184,15 @@ def test_report_renders_product_fields(monkeypatch, tmp_path):
     assert resp.status_code == 200
     body = resp.text
     assert "Amazing Widget" in body
-    assert "0.75" in body          # score_total
-    assert "150" in body           # margin_brl
-    assert "250" in body           # sell_price_suggestion_brl
+    assert "0.75" in body  # score_total
+    assert "150" in body  # margin_brl
+    assert "250" in body  # sell_price_suggestion_brl
 
 
 # ---------------------------------------------------------------------------
 # 6. Config has dashboard vars
 # ---------------------------------------------------------------------------
+
 
 def test_config_has_dashboard_username(monkeypatch):
     monkeypatch.setenv("ALIEXPRESS_APP_KEY", "x")
@@ -196,6 +206,7 @@ def test_config_has_dashboard_username(monkeypatch):
     monkeypatch.setenv("DASHBOARD_SESSION_SECRET", "secret")
 
     from app.config import Settings
+
     s = Settings()
     assert s.dashboard_username == "admin"
     assert s.dashboard_password == "pass"

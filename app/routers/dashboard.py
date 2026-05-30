@@ -63,6 +63,7 @@ async def _run_scan_background(scan_id: str, categories: list[str] | None = None
 # Dashboard index
 # ---------------------------------------------------------------------------
 
+
 @router.get("", response_class=HTMLResponse)
 def dashboard_index(request: Request):
     user, redirect = _require_user(request)
@@ -76,14 +77,13 @@ def dashboard_index(request: Request):
             reverse=True,
         )
 
-    return templates.TemplateResponse(
-        request, "dashboard.html", {"dates": dates, "user": user}
-    )
+    return templates.TemplateResponse(request, "dashboard.html", {"dates": dates, "user": user})
 
 
 # ---------------------------------------------------------------------------
 # New HTML pages — must be registered BEFORE /{date} catch-all
 # ---------------------------------------------------------------------------
+
 
 @router.get("/explorer", response_class=HTMLResponse)
 def dashboard_explorer(
@@ -138,14 +138,16 @@ def dashboard_scanner(request: Request):
         for scan_file in sorted(_storage.SCANS_DIR.glob("*.json"), reverse=True):
             try:
                 scan = ScanResult.model_validate_json(scan_file.read_text())
-                scans.append({
-                    "scan_id": scan.scan_id,
-                    "date": scan.date,
-                    "product_count": len(scan.products),
-                    "total_scanned": scan.total_scanned,
-                    "total_viable": scan.total_viable,
-                    "status": "completed",
-                })
+                scans.append(
+                    {
+                        "scan_id": scan.scan_id,
+                        "date": scan.date,
+                        "product_count": len(scan.products),
+                        "total_scanned": scan.total_scanned,
+                        "total_viable": scan.total_viable,
+                        "status": "completed",
+                    }
+                )
             except Exception:
                 continue
 
@@ -176,8 +178,7 @@ def dashboard_settings(request: Request):
 
     active_ids = set(get_active_categories())
     all_categories = [
-        {"id": k, "name": v, "active": k in active_ids}
-        for k, v in CATEGORY_NAMES.items()
+        {"id": k, "name": v, "active": k in active_ids} for k, v in CATEGORY_NAMES.items()
     ]
     return templates.TemplateResponse(
         request,
@@ -211,6 +212,7 @@ async def dashboard_settings_categories(
 # ---------------------------------------------------------------------------
 # JSON API endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.get("/products")
 def dashboard_products(
@@ -250,12 +252,14 @@ def dashboard_scans(request: Request):
         for scan_file in sorted(_storage.SCANS_DIR.glob("*.json"), reverse=True):
             try:
                 scan = ScanResult.model_validate_json(scan_file.read_text())
-                scans.append({
-                    "scan_id": scan.scan_id,
-                    "date": scan.date,
-                    "product_count": len(scan.products),
-                    "status": "completed",
-                })
+                scans.append(
+                    {
+                        "scan_id": scan.scan_id,
+                        "date": scan.date,
+                        "product_count": len(scan.products),
+                        "status": "completed",
+                    }
+                )
             except Exception:
                 continue
 
@@ -319,6 +323,7 @@ async def dashboard_telegram_test(request: Request):
 # Legacy trigger (keep for backwards compat)
 # ---------------------------------------------------------------------------
 
+
 @router.post("/scan")
 def dashboard_scan(request: Request):
     _user, redirect = _require_user(request)
@@ -342,6 +347,7 @@ def dashboard_scan(request: Request):
 # Report by date — catch-all (must be LAST)
 # ---------------------------------------------------------------------------
 
+
 @router.get("/{date}", response_class=HTMLResponse)
 def dashboard_report(request: Request, date: str):
     user, redirect = _require_user(request)
@@ -352,6 +358,4 @@ def dashboard_report(request: Request, date: str):
     if scan is None:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
 
-    return templates.TemplateResponse(
-        request, "report.html", {"scan": scan, "user": user}
-    )
+    return templates.TemplateResponse(request, "report.html", {"scan": scan, "user": user})

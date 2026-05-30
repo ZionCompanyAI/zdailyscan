@@ -6,9 +6,7 @@ from app.scrapers.models import AliProduct
 async def get_products_via_firecrawl(
     category_id: str, firecrawl_url: str, max_results: int = 100
 ) -> list[AliProduct]:
-    url_to_scrape = (
-        f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
-    )
+    url_to_scrape = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(

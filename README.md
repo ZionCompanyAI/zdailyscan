@@ -112,6 +112,21 @@ curl http://localhost:8000/scan/latest
 curl http://localhost:8000/scan/2026-05-28
 ```
 
+## Desenvolvimento
+
+```bash
+# Instale as dependências de desenvolvimento
+pip install -r requirements-dev.txt
+
+# Configure o pre-commit hook (ruff linter + ruff-format)
+pre-commit install
+
+# Executar manualmente em todos os arquivos
+pre-commit run --all-files
+```
+
+O hook roda automaticamente em cada `git commit`: **ruff** verifica e corrige problemas de lint, **ruff-format** garante formatação consistente.
+
 ## Testes
 
 ```bash

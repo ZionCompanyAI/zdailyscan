@@ -1,4 +1,5 @@
 """Re-gera a seção ## Módulos do README.md com base nos arquivos app/**/*.py."""
+
 import ast
 from pathlib import Path
 

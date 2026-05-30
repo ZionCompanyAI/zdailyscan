@@ -50,7 +50,7 @@ async def run_daily_scan(
     today = date.today().isoformat()
     all_scores: list[ProductScore] = []
 
-    for category_id in (categories or get_active_categories()):
+    for category_id in categories or get_active_categories():
         products = await get_hot_products(category_id)
         for product in products:
             market = await search_br_market(product.title)

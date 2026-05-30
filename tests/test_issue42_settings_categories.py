@@ -20,11 +20,13 @@ def _make_client(monkeypatch):
     monkeypatch.setenv("DASHBOARD_SESSION_SECRET", "test-secret-key")
     from fastapi.testclient import TestClient
     from app.main import app
+
     return TestClient(app, follow_redirects=False)
 
 
 def _signed_cookie(username: str = "admin") -> str:
     from itsdangerous import URLSafeSerializer
+
     s = URLSafeSerializer("test-secret-key", salt="session")
     return s.dumps({"user": username})
 
@@ -32,6 +34,7 @@ def _signed_cookie(username: str = "admin") -> str:
 # ---------------------------------------------------------------------------
 # 1. Settings page — sem campos AliExpress API
 # ---------------------------------------------------------------------------
+
 
 def test_settings_no_aliexpress_api_card(monkeypatch):
     """Settings não deve ter card AliExpress API."""
@@ -58,6 +61,7 @@ def test_settings_no_tracking_id_field(monkeypatch):
 # ---------------------------------------------------------------------------
 # 2. Settings page — checkboxes de categorias
 # ---------------------------------------------------------------------------
+
 
 def test_settings_has_category_checkboxes(monkeypatch):
     """Settings deve ter checkboxes para as 5 categorias."""
@@ -88,6 +92,7 @@ def test_settings_categories_form_posts_to_correct_url(monkeypatch):
 # 3. Settings page — card crawl4ai informativo
 # ---------------------------------------------------------------------------
 
+
 def test_settings_has_crawl4ai_card(monkeypatch):
     """Settings deve ter card informativo mostrando SCRAPER_MODE."""
     monkeypatch.setenv("SCRAPER_MODE", "crawl4ai")
@@ -112,6 +117,7 @@ def test_settings_crawl4ai_shows_scraper_mode(monkeypatch):
 # ---------------------------------------------------------------------------
 # 4. POST /dashboard/settings/categories
 # ---------------------------------------------------------------------------
+
 
 def test_settings_categories_post_without_auth_redirects(monkeypatch):
     """POST /settings/categories sem auth redireciona para /login."""
@@ -166,10 +172,12 @@ def test_settings_categories_post_empty_list(monkeypatch):
 # 5. pipeline.get_active_categories()
 # ---------------------------------------------------------------------------
 
+
 def test_pipeline_get_active_categories_uses_env(monkeypatch):
     """get_active_categories() retorna IDs do env SCAN_CATEGORIES."""
     monkeypatch.setenv("SCAN_CATEGORIES", "200003655,100003070")
     from app.pipeline import get_active_categories
+
     result = get_active_categories()
     assert result == ["200003655", "100003070"]
 
@@ -178,6 +186,7 @@ def test_pipeline_get_active_categories_fallback(monkeypatch):
     """get_active_categories() retorna as 5 categorias padrão quando SCAN_CATEGORIES não definida."""
     monkeypatch.delenv("SCAN_CATEGORIES", raising=False)
     from app.pipeline import get_active_categories, CATEGORIES
+
     result = get_active_categories()
     assert result == CATEGORIES
     assert len(result) == 5
@@ -187,6 +196,7 @@ def test_pipeline_get_active_categories_ignores_invalid(monkeypatch):
     """get_active_categories() ignora IDs inválidos (não conhecidos)."""
     monkeypatch.setenv("SCAN_CATEGORIES", "200003655,INVALID_ID,100003070")
     from app.pipeline import get_active_categories
+
     result = get_active_categories()
     assert "INVALID_ID" not in result
     assert "200003655" in result
@@ -197,6 +207,7 @@ def test_pipeline_get_active_categories_empty_env_falls_back(monkeypatch):
     """get_active_categories() com SCAN_CATEGORIES='' faz fallback para padrão."""
     monkeypatch.setenv("SCAN_CATEGORIES", "")
     from app.pipeline import get_active_categories, CATEGORIES
+
     result = get_active_categories()
     assert result == CATEGORIES
 
@@ -211,10 +222,20 @@ async def test_pipeline_run_uses_active_categories(monkeypatch):
 
     products = [AliExpressProduct(product_id="p1", title="Widget", price_usd=10.0)]
     market = BRMarket(
-        found=True, avg_price_brl=500.0, min_price_brl=300.0, max_price_brl=700.0,
-        result_count=200, top_listings=[]
+        found=True,
+        avg_price_brl=500.0,
+        min_price_brl=300.0,
+        max_price_brl=700.0,
+        result_count=200,
+        top_listings=[],
     )
-    cost = ImportCost(price_usd=10.0, freight_usd=5.0, tax_brl=25.65, total_cost_brl=100.0, regime="remessa_conforme")
+    cost = ImportCost(
+        price_usd=10.0,
+        freight_usd=5.0,
+        tax_brl=25.65,
+        total_cost_brl=100.0,
+        regime="remessa_conforme",
+    )
 
     calls = []
 
@@ -230,6 +251,7 @@ async def test_pipeline_run_uses_active_categories(monkeypatch):
         patch("app.pipeline.save_daily_report"),
     ):
         from app.pipeline import run_daily_scan
+
         await run_daily_scan()
 
     # Com SCAN_CATEGORIES=200003655 só 1 categoria deve ser processada

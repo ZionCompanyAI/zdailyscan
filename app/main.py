@@ -32,6 +32,7 @@ app.include_router(dashboard.router)
 @app.get("/")
 def root(request: Request):
     from app.routers.auth import get_current_user
+
     user = get_current_user(request)
     if user:
         return RedirectResponse(url="/dashboard", status_code=303)

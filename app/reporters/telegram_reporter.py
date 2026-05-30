@@ -38,7 +38,11 @@ async def send_daily_report(results: list[ProductScore]) -> bool:
             resp = await client.post(
                 f"{settings.mc_url}/telegram/reply",
                 headers={"x-api-key": settings.mc_api_key},
-                json={"chat_id": settings.telegram_chat_id, "text": message, "parse_mode": "Markdown"},
+                json={
+                    "chat_id": settings.telegram_chat_id,
+                    "text": message,
+                    "parse_mode": "Markdown",
+                },
             )
             resp.raise_for_status()
             return True
