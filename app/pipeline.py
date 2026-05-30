@@ -41,13 +41,16 @@ class ScanResult(BaseModel):
     total_viable: int
 
 
-async def run_daily_scan(scan_id: str | None = None) -> ScanResult:
+async def run_daily_scan(
+    scan_id: str | None = None,
+    categories: list[str] | None = None,
+) -> ScanResult:
     if scan_id is None:
         scan_id = str(uuid.uuid4())
     today = date.today().isoformat()
     all_scores: list[ProductScore] = []
 
-    for category_id in get_active_categories():
+    for category_id in (categories or get_active_categories()):
         products = await get_hot_products(category_id)
         for product in products:
             market = await search_br_market(product.title)

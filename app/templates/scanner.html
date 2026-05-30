@@ -167,22 +167,20 @@ tbody td { padding: 0.65rem 0.75rem; color: var(--color-text); }
 
 <div class="section">
   <p class="section-title">Novo Scan</p>
-  <div class="trigger-card">
+  <form class="trigger-card" method="post" action="/dashboard/scan/trigger">
     <div>
       <p style="font-size:0.8rem;color:var(--color-text-muted);margin-bottom:0.6rem;">Categorias</p>
       <div class="cat-checkboxes">
         {% for cat in categories %}
         <label class="cat-label">
-          <input type="checkbox" name="cat" value="{{ cat.id }}" checked>
+          <input type="checkbox" name="categories" value="{{ cat.id }}" checked>
           {{ cat.name }}
         </label>
         {% endfor %}
       </div>
     </div>
-    <form method="post" action="/dashboard/scan/trigger">
-      <button type="submit" class="btn">Iniciar Scan</button>
-    </form>
-  </div>
+    <button type="submit" class="btn">Iniciar Scan</button>
+  </form>
 </div>
 
 <div class="section">
