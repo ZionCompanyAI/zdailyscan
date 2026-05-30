@@ -1,6 +1,10 @@
+import logging
+import os
+
 import httpx
 from pydantic import BaseModel
 
+logger = logging.getLogger(__name__)
 
 ML_SEARCH_URL = "https://api.mercadolibre.com/sites/MLB/search"
 
@@ -15,10 +19,31 @@ class BRMarket(BaseModel):
 
 
 async def search_br_market(query: str) -> BRMarket:
-    async with httpx.AsyncClient() as client:
-        response = await client.get(ML_SEARCH_URL, params={"q": query, "limit": 10})
-        response.raise_for_status()
-        data = response.json()
+    headers = {}
+    token = os.environ.get("ML_USER_ACCESS_TOKEN", "")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                ML_SEARCH_URL,
+                params={"q": query, "limit": 10},
+                headers=headers,
+                timeout=10.0,
+            )
+            response.raise_for_status()
+            data = response.json()
+    except Exception as exc:
+        logger.warning("search_br_market failed for %r: %s", query[:60], exc)
+        return BRMarket(
+            found=False,
+            avg_price_brl=None,
+            min_price_brl=None,
+            max_price_brl=None,
+            result_count=0,
+            top_listings=[],
+        )
 
     results = data.get("results", [])
     count = data.get("paging", {}).get("total", len(results))
