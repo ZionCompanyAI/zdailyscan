@@ -17,7 +17,7 @@ async def get_products_via_firecrawl(
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(
-            f"{firecrawl_url.rstrip("/")}/v1/scrape",
+            firecrawl_url.rstrip("/") + "/v1/scrape",
             headers=headers,
             json={
                 "url": url_to_scrape,
