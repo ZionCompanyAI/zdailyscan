@@ -26,7 +26,7 @@ jobs:
       - name: Run Playwright tests
         run: npx playwright test
         env:
-          BASE_URL: ${{ secrets.BASE_URL }}
+          BASE_URL: https://zdailyscan.zioncompanyai.com.br
 
       - name: Upload test report on failure
         if: failure()
