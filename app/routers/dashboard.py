@@ -190,8 +190,26 @@ def dashboard_settings(request: Request):
             "scraper_mode": os.environ.get("SCRAPER_MODE", "crawl4ai"),
             "usd_brl_rate": settings.usd_brl_rate,
             "categories": all_categories,
+            "aliexpress_username_set": bool(settings.aliexpress_username),
+            "aliexpress_password_set": bool(settings.aliexpress_password),
         },
     )
+
+
+@router.post("/settings")
+async def dashboard_settings_post(
+    request: Request,
+    aliexpress_username: str = Form(default=""),
+    aliexpress_password: str = Form(default=""),
+):
+    user, redirect = _require_user(request)
+    if redirect:
+        return redirect
+    if aliexpress_username:
+        os.environ["ALIEXPRESS_USERNAME"] = aliexpress_username
+    if aliexpress_password:
+        os.environ["ALIEXPRESS_PASSWORD"] = aliexpress_password
+    return RedirectResponse(url="/dashboard/settings", status_code=303)
 
 
 @router.post("/settings/categories")
