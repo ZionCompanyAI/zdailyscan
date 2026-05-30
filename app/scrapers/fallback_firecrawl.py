@@ -1,3 +1,5 @@
+import os
+
 import httpx
 
 from app.scrapers.models import AliProduct
@@ -8,9 +10,15 @@ async def get_products_via_firecrawl(
 ) -> list[AliProduct]:
     url_to_scrape = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
 
+    api_key = os.environ.get("FIRECRAWL_API_KEY", "")
+    headers = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
     async with httpx.AsyncClient() as client:
         resp = await client.post(
-            f"{firecrawl_url.rstrip('/')}/v1/scrape",
+            f"{firecrawl_url.rstrip("/")}/v1/scrape",
+            headers=headers,
             json={
                 "url": url_to_scrape,
                 "formats": ["extract"],
