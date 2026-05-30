@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #55)
+- TASK-055: fix(deploy) — playwright install chromium no startCommand Railway — arquivado 2026-05-30
+
 ## Concluído (issue #12)
 - TASK-012: CI workflow — habilitar GitHub Merge Queue — arquivado 2026-05-29
 
