@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #57)
+- TASK-057: feat(dashboard) — AliExpress credentials form in settings — arquivado 2026-05-30
+
 ## Concluído (issue #55)
 - TASK-055: fix(deploy) — playwright install chromium no startCommand Railway — arquivado 2026-05-30
 
