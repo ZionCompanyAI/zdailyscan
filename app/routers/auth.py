@@ -1,7 +1,7 @@
-from itsdangerous import BadSignature, URLSafeSerializer
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from itsdangerous import BadSignature, URLSafeSerializer
 
 from app.config import Settings
 
@@ -32,6 +32,7 @@ def login_page(request: Request):
 
 
 @router.post("/login")
+@router.post("/auth/login")
 def login_post(
     request: Request,
     username: str = Form(...),
