@@ -1,9 +1,40 @@
 import json as _json
 import os
 
+from app.scrapers.fallback_firecrawl import get_products_via_firecrawl
 from app.scrapers.models import AliProduct
 
 __all__ = ["AliProduct", "get_hot_products"]
+
+# Selectors use data-* and itemprop attributes — stable across AliExpress bundler deploys.
+# Replaced hash-suffixed class names (e.g. .multi--titleText--nXeOvyr) that change on every
+# webpack release. Firecrawl fallback is triggered when this schema returns 0 products.
+_PRODUCT_SCHEMA = {
+    "name": "AliExpress Products",
+    "baseSelector": "[data-item-id]",
+    "fields": [
+        {
+            "name": "product_id",
+            "selector": "a[href*='/item/']",
+            "type": "attribute",
+            "attribute": "href",
+        },
+        {"name": "title", "selector": "[itemprop='name'], h3", "type": "text"},
+        {"name": "price", "selector": "[itemprop='price'], [data-price]", "type": "text"},
+        {"name": "sold", "selector": "[data-sold], [data-trade]", "type": "text"},
+        {
+            "name": "rating",
+            "selector": "[itemprop='ratingValue'], [data-rating]",
+            "type": "text",
+        },
+        {
+            "name": "image_url",
+            "selector": "img",
+            "type": "attribute",
+            "attribute": "src",
+        },
+    ],
+}
 
 
 async def _scrape_with_crawl4ai(category_id: str, max_results: int) -> list[AliProduct]:
@@ -11,32 +42,9 @@ async def _scrape_with_crawl4ai(category_id: str, max_results: int) -> list[AliP
     from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
     from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 
-    schema = {
-        "name": "AliExpress Products",
-        "baseSelector": ".list--gallery--C2f2tvm .list--item--G8aNaOa",
-        "fields": [
-            {
-                "name": "product_id",
-                "selector": "a",
-                "type": "attribute",
-                "attribute": "href",
-            },
-            {"name": "title", "selector": ".multi--titleText--nXeOvyr", "type": "text"},
-            {"name": "price", "selector": ".multi--price-sale--U-S0jtj", "type": "text"},
-            {"name": "sold", "selector": ".multi--trade--Ktbl2jB", "type": "text"},
-            {"name": "rating", "selector": ".multi--evaluation--3d0e-Ey span", "type": "text"},
-            {
-                "name": "image_url",
-                "selector": "img",
-                "type": "attribute",
-                "attribute": "src",
-            },
-        ],
-    }
-
     url = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
     browser_config = BrowserConfig(headless=True)
-    strategy = JsonCssExtractionStrategy(schema)
+    strategy = JsonCssExtractionStrategy(_PRODUCT_SCHEMA)
     run_config = CrawlerRunConfig(extraction_strategy=strategy)
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
@@ -97,11 +105,13 @@ async def get_hot_products(
         products = await _scrape_with_crawl4ai(category_id, max_results)
     except Exception:
         if firecrawl_url:
-            from app.scrapers.fallback_firecrawl import get_products_via_firecrawl
-
             products = await get_products_via_firecrawl(category_id, firecrawl_url, max_results)
         else:
             raise
+    else:
+        # No exception, but empty list — selectors may be stale; trigger firecrawl if available
+        if not products and firecrawl_url:
+            products = await get_products_via_firecrawl(category_id, firecrawl_url, max_results)
 
     filtered = [p for p in products if p.rating >= min_rating]
     return filtered[:max_results]
