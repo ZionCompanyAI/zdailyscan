@@ -29,6 +29,30 @@ CATEGORY_NAMES: dict[str, str] = {
 }
 
 
+async def _persist_railway_env(key: str, value: str) -> None:
+    """Persiste env var no serviço Railway via GraphQL. No-op se vars de config ausentes."""
+    token = os.environ.get("RAILWAY_API_TOKEN", "")
+    project_id = os.environ.get("RAILWAY_PROJECT_ID", "")
+    env_id = os.environ.get("RAILWAY_ENVIRONMENT_ID", "")
+    svc_id = os.environ.get("RAILWAY_SERVICE_ID", "")
+    if not all([token, project_id, env_id, svc_id]):
+        return
+    query = (
+        "mutation { variableCollectionUpsert(input: { "
+        f'projectId: "{project_id}", environmentId: "{env_id}", '
+        f'serviceId: "{svc_id}", variables: {{ {key}: "{value}" }} }}) }}'
+    )
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                "https://backboard.railway.app/graphql/v2",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"query": query},
+            )
+    except Exception:
+        logger.warning("Failed to persist %s to Railway env vars", key)
+
+
 def _require_user(request: Request):
     user = get_current_user(request)
     if not user:
@@ -213,6 +237,7 @@ async def dashboard_settings_post(
         return redirect
     if aliexpress_session_cookies:
         os.environ["ALIEXPRESS_SESSION_COOKIES"] = aliexpress_session_cookies
+        await _persist_railway_env("ALIEXPRESS_SESSION_COOKIES", aliexpress_session_cookies)
     return RedirectResponse(url="/dashboard/settings", status_code=303)
 
 
@@ -228,6 +253,7 @@ async def dashboard_settings_categories(
     valid = set(CATEGORIES)
     selected = [c for c in categories if c in valid]
     os.environ["SCAN_CATEGORIES"] = ",".join(selected)
+    await _persist_railway_env("SCAN_CATEGORIES", ",".join(selected))
     return RedirectResponse(url="/dashboard/settings", status_code=303)
 
 
