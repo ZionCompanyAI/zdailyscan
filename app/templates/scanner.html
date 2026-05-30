@@ -173,7 +173,7 @@ tbody td { padding: 0.65rem 0.75rem; color: var(--color-text); }
       <div class="cat-checkboxes">
         {% for cat in categories %}
         <label class="cat-label">
-          <input type="checkbox" name="categories" value="{{ cat.id }}" checked>
+          <input type="checkbox" name="categories" value="{{ cat.id }}" {% if cat.active %}checked{% endif %}>
           {{ cat.name }}
         </label>
         {% endfor %}
