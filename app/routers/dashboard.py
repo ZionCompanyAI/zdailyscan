@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import uuid as uuid_lib
 
@@ -11,6 +12,8 @@ from fastapi.templating import Jinja2Templates
 from app.config import Settings
 from app.pipeline import CATEGORIES, ScanResult, get_active_categories, run_daily_scan
 from app.routers.auth import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/dashboard")
 templates = Jinja2Templates(directory="app/templates")
@@ -56,6 +59,7 @@ async def _run_scan_background(scan_id: str, categories: list[str] | None = None
         _storage.save_scan(result)
         _scan_status[scan_id] = {"status": "completed", "product_count": len(result.products)}
     except Exception:
+        logger.exception("scan failed: %s", scan_id)
         _scan_status[scan_id] = {"status": "failed", "product_count": 0}
 
 
