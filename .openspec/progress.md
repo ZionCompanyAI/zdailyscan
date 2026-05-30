@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #61)
+- TASK-061: fix(scraper) — json.loads em extracted_content do crawl4ai — arquivado 2026-05-30
+
 ## Concluído (issue #57)
 - TASK-057: feat(dashboard) — AliExpress credentials form in settings — arquivado 2026-05-30
 

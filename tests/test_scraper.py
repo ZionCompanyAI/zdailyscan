@@ -44,3 +44,53 @@ async def test_mock_mode_no_network():
     mock_crawl.assert_not_called()
     assert isinstance(results, list)
     assert len(results) > 0
+
+
+async def test_extracted_content_as_string_returns_products():
+    """crawl4ai may return extracted_content as a JSON string — must be parsed, not iterated as chars."""
+    import json
+    import sys
+    from unittest.mock import MagicMock
+
+    fake_items = [
+        {
+            "product_id": "/item/123.html",
+            "title": "Test Product",
+            "price": "US$9.99",
+            "sold": "1000+sold",
+            "rating": "4.9",
+            "image_url": "https://ae01.alicdn.com/kf/test.jpg",
+        }
+    ]
+    fake_result = MagicMock()
+    fake_result.extracted_content = json.dumps(fake_items)
+
+    mock_crawler_instance = AsyncMock()
+    mock_crawler_instance.arun = AsyncMock(return_value=fake_result)
+
+    MockCrawlerCtx = MagicMock()
+    MockCrawlerCtx.return_value.__aenter__ = AsyncMock(return_value=mock_crawler_instance)
+    MockCrawlerCtx.return_value.__aexit__ = AsyncMock(return_value=False)
+
+    mock_crawl4ai = MagicMock()
+    mock_crawl4ai.AsyncWebCrawler = MockCrawlerCtx
+    mock_crawl4ai.BrowserConfig = MagicMock()
+    mock_crawl4ai.CrawlerRunConfig = MagicMock()
+
+    mock_extraction = MagicMock()
+    mock_extraction.JsonCssExtractionStrategy = MagicMock()
+
+    with patch.dict(sys.modules, {
+        "crawl4ai": mock_crawl4ai,
+        "crawl4ai.extraction_strategy": mock_extraction,
+    }):
+        # Force re-import to pick up mocked modules
+        import importlib
+        import app.scrapers.aliexpress as ali_mod
+        importlib.reload(ali_mod)
+
+        results = await ali_mod._scrape_with_crawl4ai("200000783", max_results=10)
+
+    assert len(results) == 1, f"Expected 1 product, got {len(results)} — extracted_content string was not parsed"
+    assert results[0].product_id == "123"
+    assert results[0].title == "Test Product"

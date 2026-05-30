@@ -1,3 +1,4 @@
+import json
 import os
 
 from app.scrapers.models import AliProduct
@@ -41,7 +42,8 @@ async def _scrape_with_crawl4ai(category_id: str, max_results: int) -> list[AliP
     async with AsyncWebCrawler(config=browser_config) as crawler:
         result = await crawler.arun(url=url, config=run_config)
 
-    raw: list[dict] = result.extracted_content or []
+    raw_content = result.extracted_content or "[]"
+    raw: list[dict] = json.loads(raw_content) if isinstance(raw_content, str) else raw_content
     products: list[AliProduct] = []
     for item in raw[:max_results]:
         try:
