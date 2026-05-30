@@ -45,19 +45,25 @@ async def get_products_via_firecrawl(
         resp.raise_for_status()
         data = resp.json()
 
-    raw: list[dict] = data.get("data", {}).get("extract", []) or []
+    # Support both {data: {extract: [...]}} and {data: [...]} response shapes
+    payload = data.get("data") or {}
+    if isinstance(payload, list):
+        raw: list[dict] = payload
+    else:
+        raw = payload.get("extract") or []
+
     products: list[AliProduct] = []
     for item in raw[:max_results]:
         try:
             products.append(
                 AliProduct(
-                    product_id=str(item.get("product_id", "")),
-                    title=str(item.get("title", "")),
-                    price_usd=float(item.get("price_usd", 0)),
-                    sale_count_30d=int(item.get("sale_count_30d", 0)),
-                    rating=float(item.get("rating", 0)),
-                    image_url=str(item.get("image_url", "")),
-                    product_url=str(item.get("product_url", "")),
+                    product_id=str(item.get("product_id") or ""),
+                    title=str(item.get("title") or ""),
+                    price_usd=float(item.get("price_usd") or 0),
+                    sale_count_30d=int(item.get("sale_count_30d") or 0),
+                    rating=float(item.get("rating") or 0),
+                    image_url=str(item.get("image_url") or ""),
+                    product_url=str(item.get("product_url") or ""),
                     category_id=category_id,
                 )
             )

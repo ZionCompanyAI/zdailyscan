@@ -81,5 +81,7 @@ async def scan_run(
 
 @app.get("/scrapers/aliexpress")
 async def scrape_aliexpress(category: str = "200003655", limit: int = 20):
-    products = await get_hot_products(category_id=category, max_results=limit)
+    # min_rating=0.0: do not filter out products returned by Firecrawl fallback
+    # which may not include a rating field (defaults to 0.0 in AliProduct).
+    products = await get_hot_products(category_id=category, min_rating=0.0, max_results=limit)
     return {"products": [p.model_dump() for p in products], "count": len(products)}
