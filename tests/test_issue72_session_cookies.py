@@ -179,7 +179,6 @@ def _fake_crawl4ai_modules(mock_crawler):
 async def test_scraper_injects_cookies_into_crawl4ai(monkeypatch):
     """Scraper deve injetar ALIEXPRESS_SESSION_COOKIES no arun() do Crawl4AI."""
     import sys
-    import importlib
 
     cookies_json = '{"ali_apache_id":"abc","_tb_token_":"xyz"}'
     monkeypatch.setenv("ALIEXPRESS_SESSION_COOKIES", cookies_json)
