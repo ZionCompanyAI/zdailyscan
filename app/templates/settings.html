@@ -134,19 +134,9 @@
   <div class="settings-card">
     <p class="card-heading">AliExpress Credentials</p>
     <div class="setting-row">
-      <span class="setting-key">ALIEXPRESS_USERNAME</span>
+      <span class="setting-key">Session Cookies</span>
       <span class="setting-value">
-        {% if aliexpress_username_set %}
-          <span style="color:var(--color-success)">● Preenchido</span>
-        {% else %}
-          <span style="color:var(--color-text-muted)">○ Vazio</span>
-        {% endif %}
-      </span>
-    </div>
-    <div class="setting-row">
-      <span class="setting-key">ALIEXPRESS_PASSWORD</span>
-      <span class="setting-value">
-        {% if aliexpress_password_set %}
+        {% if aliexpress_session_cookies %}
           <span style="color:var(--color-success)">● Preenchido</span>
         {% else %}
           <span style="color:var(--color-text-muted)">○ Vazio</span>
@@ -155,14 +145,13 @@
     </div>
     <form method="POST" action="/dashboard/settings" style="margin-top:0.75rem;">
       <div style="display:flex; flex-direction:column; gap:0.5rem;">
-        <input type="text" name="aliexpress_username" placeholder="Username (deixe vazio para não alterar)"
-               autocomplete="username"
-               style="background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius);color:var(--color-text);font-family:var(--font-sans);font-size:0.85rem;padding:0.45rem 0.7rem;width:100%;">
-        <input type="password" name="aliexpress_password" placeholder="Password (deixe vazio para não alterar)"
-               autocomplete="current-password"
-               style="background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius);color:var(--color-text);font-family:var(--font-sans);font-size:0.85rem;padding:0.45rem 0.7rem;width:100%;">
+        <label style="font-size:0.8rem;color:var(--color-text-muted);">AliExpress Session Cookies (JSON do browser)</label>
+        <textarea name="aliexpress_session_cookies"
+                  rows="5"
+                  placeholder='[{"name":"...","value":"..."}]'
+                  style="background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius);color:var(--color-text);font-family:'JetBrains Mono','Fira Mono',monospace;font-size:0.75rem;padding:0.45rem 0.7rem;width:100%;resize:vertical;">{{ aliexpress_session_cookies }}</textarea>
       </div>
-      <button type="submit" class="btn" style="margin-top:0.75rem;">Salvar credenciais</button>
+      <button type="submit" class="btn" style="margin-top:0.75rem;">Salvar cookies</button>
     </form>
   </div>
 

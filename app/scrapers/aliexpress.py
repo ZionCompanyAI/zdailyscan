@@ -37,7 +37,9 @@ _PRODUCT_SCHEMA = {
 }
 
 
-async def _scrape_with_crawl4ai(category_id: str, max_results: int) -> list[AliProduct]:
+async def _scrape_with_crawl4ai(
+    category_id: str, max_results: int, session_cookies: str = ""
+) -> list[AliProduct]:
     # Lazy import — crawl4ai only loaded when not in mock/test mode
     from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
     from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
@@ -45,7 +47,15 @@ async def _scrape_with_crawl4ai(category_id: str, max_results: int) -> list[AliP
     url = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
     browser_config = BrowserConfig(headless=True)
     strategy = JsonCssExtractionStrategy(_PRODUCT_SCHEMA)
-    run_config = CrawlerRunConfig(extraction_strategy=strategy)
+
+    cookies: list[dict] | None = None
+    if session_cookies:
+        try:
+            cookies = _json.loads(session_cookies)
+        except _json.JSONDecodeError:
+            pass
+
+    run_config = CrawlerRunConfig(extraction_strategy=strategy, cookies=cookies)
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         result = await crawler.arun(url=url, config=run_config)
@@ -100,9 +110,10 @@ async def get_hot_products(
         return get_mock_products(category_id, min_rating, max_results)
 
     firecrawl_url = os.environ.get("FIRECRAWL_URL", "")
+    session_cookies = os.environ.get("ALIEXPRESS_SESSION_COOKIES", "")
 
     try:
-        products = await _scrape_with_crawl4ai(category_id, max_results)
+        products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
     except Exception:
         if firecrawl_url:
             products = await get_products_via_firecrawl(category_id, firecrawl_url, max_results)
