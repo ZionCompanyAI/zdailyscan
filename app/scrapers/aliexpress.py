@@ -112,17 +112,17 @@ async def get_hot_products(
     firecrawl_url = os.environ.get("FIRECRAWL_URL", "")
     session_cookies = os.environ.get("ALIEXPRESS_SESSION_COOKIES", "")
 
-    try:
+    if session_cookies:
+        # cookies present: crawl4ai supports injection; firecrawl is the fallback
         products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
-    except Exception:
+        if not products and firecrawl_url:
+            products = await get_products_via_firecrawl(category_id, firecrawl_url, max_results)
+    else:
+        # no cookies: public listings only; use firecrawl directly
         if firecrawl_url:
             products = await get_products_via_firecrawl(category_id, firecrawl_url, max_results)
         else:
-            raise
-    else:
-        # No exception, but empty list — selectors may be stale; trigger firecrawl if available
-        if not products and firecrawl_url:
-            products = await get_products_via_firecrawl(category_id, firecrawl_url, max_results)
+            products = []
 
     filtered = [p for p in products if p.rating >= min_rating]
     return filtered[:max_results]
