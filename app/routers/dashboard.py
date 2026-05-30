@@ -1,5 +1,8 @@
 import asyncio
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 import uuid as uuid_lib
 
 import app.storage as _storage
@@ -56,6 +59,7 @@ async def _run_scan_background(scan_id: str, categories: list[str] | None = None
         _storage.save_scan(result)
         _scan_status[scan_id] = {"status": "completed", "product_count": len(result.products)}
     except Exception:
+        logger.exception("scan failed: %s", scan_id)
         _scan_status[scan_id] = {"status": "failed", "product_count": 0}
 
 
