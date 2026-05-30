@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #78)
+- TASK-078: fix(settings) — persistir cookies e categorias em Railway env vars — arquivado 2026-05-30
+
 ## Concluído (issue #57)
 - TASK-057: feat(dashboard) — AliExpress credentials form in settings — arquivado 2026-05-30
 
