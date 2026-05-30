@@ -1,13 +1,31 @@
 import pytest
 
 
+def _set_required(monkeypatch, **overrides):
+    defaults = {
+        "ALIEXPRESS_APP_KEY": "x",
+        "ALIEXPRESS_APP_SECRET": "x",
+        "ALIEXPRESS_TRACKING_ID": "x",
+        "TELEGRAM_BOT_TOKEN": "x",
+        "MC_API_KEY": "x",
+        "MC_URL": "http://mc.example.com",
+        "DASHBOARD_PASSWORD": "x",
+        "DASHBOARD_SESSION_SECRET": "x",
+    }
+    for k, v in {**defaults, **overrides}.items():
+        monkeypatch.setenv(k, v)
+
+
 def test_settings_loads_from_env(monkeypatch):
-    monkeypatch.setenv("ALIEXPRESS_APP_KEY", "key123")
-    monkeypatch.setenv("ALIEXPRESS_APP_SECRET", "secret123")
-    monkeypatch.setenv("ALIEXPRESS_TRACKING_ID", "track123")
-    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "tg:token")
-    monkeypatch.setenv("MC_API_KEY", "mc_key")
-    monkeypatch.setenv("MC_URL", "https://mc.example.com")
+    _set_required(
+        monkeypatch,
+        ALIEXPRESS_APP_KEY="key123",
+        ALIEXPRESS_APP_SECRET="secret123",
+        ALIEXPRESS_TRACKING_ID="track123",
+        TELEGRAM_BOT_TOKEN="tg:token",
+        MC_API_KEY="mc_key",
+        MC_URL="https://mc.example.com",
+    )
 
     from app.config import Settings
 
@@ -38,12 +56,7 @@ def test_settings_missing_required_raises(monkeypatch):
 
 
 def test_telegram_chat_id_default(monkeypatch):
-    monkeypatch.setenv("ALIEXPRESS_APP_KEY", "x")
-    monkeypatch.setenv("ALIEXPRESS_APP_SECRET", "x")
-    monkeypatch.setenv("ALIEXPRESS_TRACKING_ID", "x")
-    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
-    monkeypatch.setenv("MC_API_KEY", "x")
-    monkeypatch.setenv("MC_URL", "http://mc.example.com")
+    _set_required(monkeypatch)
     monkeypatch.delenv("ZDAILYSCAN_TELEGRAM_CHAT_ID", raising=False)
 
     from app.config import Settings
@@ -53,15 +66,34 @@ def test_telegram_chat_id_default(monkeypatch):
 
 
 def test_telegram_chat_id_from_env(monkeypatch):
-    monkeypatch.setenv("ALIEXPRESS_APP_KEY", "x")
-    monkeypatch.setenv("ALIEXPRESS_APP_SECRET", "x")
-    monkeypatch.setenv("ALIEXPRESS_TRACKING_ID", "x")
-    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
-    monkeypatch.setenv("MC_API_KEY", "x")
-    monkeypatch.setenv("MC_URL", "http://mc.example.com")
+    _set_required(monkeypatch)
     monkeypatch.setenv("ZDAILYSCAN_TELEGRAM_CHAT_ID", "9999999999")
 
     from app.config import Settings
 
     s = Settings()
     assert s.telegram_chat_id == 9999999999
+
+
+def test_aliexpress_credentials_default_to_none(monkeypatch):
+    _set_required(monkeypatch)
+    monkeypatch.delenv("ALIEXPRESS_USERNAME", raising=False)
+    monkeypatch.delenv("ALIEXPRESS_PASSWORD", raising=False)
+
+    from app.config import Settings
+
+    s = Settings()
+    assert s.aliexpress_username is None
+    assert s.aliexpress_password is None
+
+
+def test_aliexpress_credentials_load_from_env(monkeypatch):
+    _set_required(monkeypatch)
+    monkeypatch.setenv("ALIEXPRESS_USERNAME", "user@example.com")
+    monkeypatch.setenv("ALIEXPRESS_PASSWORD", "s3cr3t")
+
+    from app.config import Settings
+
+    s = Settings()
+    assert s.aliexpress_username == "user@example.com"
+    assert s.aliexpress_password == "s3cr3t"
