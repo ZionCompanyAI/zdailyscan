@@ -44,9 +44,9 @@ def test_pipeline_uses_scrapers_import():
     import app.pipeline as pipeline_module
 
     fn = pipeline_module.get_hot_products
-    assert "scrapers" in fn.__module__, (
-        f"Expected get_hot_products from app.scrapers, got module: {fn.__module__}"
-    )
+    assert (
+        "scrapers" in fn.__module__
+    ), f"Expected get_hot_products from app.scrapers, got module: {fn.__module__}"
 
 
 def test_scrapers_package_exports_get_hot_products():

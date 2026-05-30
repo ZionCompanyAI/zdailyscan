@@ -19,11 +19,13 @@ def _make_client(monkeypatch):
     monkeypatch.setenv("DASHBOARD_SESSION_SECRET", "test-secret-key")
     from fastapi.testclient import TestClient
     from app.main import app
+
     return TestClient(app, follow_redirects=False)
 
 
 def _signed_cookie(username: str = "admin") -> str:
     from itsdangerous import URLSafeSerializer
+
     s = URLSafeSerializer("test-secret-key", salt="session")
     return s.dumps({"user": username})
 
@@ -31,6 +33,7 @@ def _signed_cookie(username: str = "admin") -> str:
 # ---------------------------------------------------------------------------
 # 1. Viewport meta presente em todas as páginas
 # ---------------------------------------------------------------------------
+
 
 def test_login_has_viewport_meta(monkeypatch):
     client = _make_client(monkeypatch)
@@ -53,6 +56,7 @@ def test_dashboard_has_viewport_meta(monkeypatch):
 
 def test_explorer_has_viewport_meta(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -64,6 +68,7 @@ def test_explorer_has_viewport_meta(monkeypatch, tmp_path):
 
 def test_scanner_has_viewport_meta(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -82,6 +87,7 @@ def test_settings_has_viewport_meta(monkeypatch):
 # 2. Bottom navigation bar presente em páginas autenticadas
 # ---------------------------------------------------------------------------
 
+
 def test_dashboard_has_bottom_nav(monkeypatch):
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -91,6 +97,7 @@ def test_dashboard_has_bottom_nav(monkeypatch):
 
 def test_explorer_has_bottom_nav(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -100,6 +107,7 @@ def test_explorer_has_bottom_nav(monkeypatch, tmp_path):
 
 def test_scanner_has_bottom_nav(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -117,6 +125,7 @@ def test_settings_has_bottom_nav(monkeypatch):
 # ---------------------------------------------------------------------------
 # 3. Top nav hidden on mobile (media query presente)
 # ---------------------------------------------------------------------------
+
 
 def test_base_has_media_query_for_nav(monkeypatch):
     client = _make_client(monkeypatch)
@@ -141,17 +150,24 @@ def test_base_top_nav_hidden_on_mobile(monkeypatch):
 # 4. Login inputs com font-size >= 16px (evita zoom iOS)
 # ---------------------------------------------------------------------------
 
+
 def test_login_inputs_font_size_16px(monkeypatch):
     client = _make_client(monkeypatch)
     resp = client.get("/login")
     body = resp.text
     # The field input style must have font-size of at least 16px or 1rem
-    assert "font-size: 1rem" in body or "font-size:1rem" in body or "font-size: 16px" in body or "font-size:16px" in body
+    assert (
+        "font-size: 1rem" in body
+        or "font-size:1rem" in body
+        or "font-size: 16px" in body
+        or "font-size:16px" in body
+    )
 
 
 # ---------------------------------------------------------------------------
 # 5. Botões com min-height 44px (tap targets)
 # ---------------------------------------------------------------------------
+
 
 def test_login_button_min_height_44px(monkeypatch):
     client = _make_client(monkeypatch)
@@ -165,8 +181,10 @@ def test_login_button_min_height_44px(monkeypatch):
 # 6. Explorer: filtros em elemento colapsável
 # ---------------------------------------------------------------------------
 
+
 def test_explorer_filters_collapsible(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -178,6 +196,7 @@ def test_explorer_filters_collapsible(monkeypatch, tmp_path):
 
 def test_explorer_grid_responsive(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -193,8 +212,10 @@ def test_explorer_grid_responsive(monkeypatch, tmp_path):
 # 7. Scanner: botão trigger full-width no mobile
 # ---------------------------------------------------------------------------
 
+
 def test_scanner_has_full_width_btn_mobile(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -208,8 +229,10 @@ def test_scanner_has_full_width_btn_mobile(monkeypatch, tmp_path):
 # 8. Sem bootstrap, OKLCH mantido em todas as páginas
 # ---------------------------------------------------------------------------
 
+
 def test_all_pages_no_bootstrap(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -220,6 +243,7 @@ def test_all_pages_no_bootstrap(monkeypatch, tmp_path):
 
 def test_all_pages_have_oklch(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -232,6 +256,7 @@ def test_all_pages_have_oklch(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 # 9. Settings: grid responsivo (1 coluna em mobile)
 # ---------------------------------------------------------------------------
+
 
 def test_settings_grid_single_col_mobile(monkeypatch):
     client = _make_client(monkeypatch)

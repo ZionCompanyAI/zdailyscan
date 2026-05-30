@@ -10,6 +10,7 @@ def test_settings_loads_from_env(monkeypatch):
     monkeypatch.setenv("MC_URL", "https://mc.example.com")
 
     from app.config import Settings
+
     s = Settings()
     assert s.aliexpress_app_key == "key123"
     assert s.aliexpress_app_secret == "secret123"
@@ -21,12 +22,17 @@ def test_settings_loads_from_env(monkeypatch):
 
 def test_settings_missing_required_raises(monkeypatch):
     for key in [
-        "ALIEXPRESS_APP_KEY", "ALIEXPRESS_APP_SECRET", "ALIEXPRESS_TRACKING_ID",
-        "TELEGRAM_BOT_TOKEN", "MC_API_KEY", "MC_URL",
+        "ALIEXPRESS_APP_KEY",
+        "ALIEXPRESS_APP_SECRET",
+        "ALIEXPRESS_TRACKING_ID",
+        "TELEGRAM_BOT_TOKEN",
+        "MC_API_KEY",
+        "MC_URL",
     ]:
         monkeypatch.delenv(key, raising=False)
 
     from app.config import Settings
+
     with pytest.raises(Exception):
         Settings()
 
@@ -41,6 +47,7 @@ def test_telegram_chat_id_default(monkeypatch):
     monkeypatch.delenv("ZDAILYSCAN_TELEGRAM_CHAT_ID", raising=False)
 
     from app.config import Settings
+
     s = Settings()
     assert s.telegram_chat_id == 7041182277
 
@@ -55,5 +62,6 @@ def test_telegram_chat_id_from_env(monkeypatch):
     monkeypatch.setenv("ZDAILYSCAN_TELEGRAM_CHAT_ID", "9999999999")
 
     from app.config import Settings
+
     s = Settings()
     assert s.telegram_chat_id == 9999999999

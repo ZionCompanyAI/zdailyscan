@@ -1,4 +1,5 @@
 """Tests for scripts/update_progress.py and scripts/update_readme.py."""
+
 import sys
 from pathlib import Path
 

@@ -61,16 +61,16 @@ def test_score_bounds():
         (1.0, 0.5, 0),
         (100.0, 99.0, 1000),
         (200.0, 10.0, 50),
-        (50.0, 50.0, 500),   # zero margin → margem = 0
-        (50.0, 55.0, 100),   # negative margin → clamp to 0
+        (50.0, 50.0, 500),  # zero margin → margem = 0
+        (50.0, 55.0, 100),  # negative margin → clamp to 0
     ]:
         ali = AliProduct(product_id="px", title="Test")
         market = _make_market(avg_price=avg_price, result_count=count)
         cost = _make_cost(price_usd=7.0, total_cost_brl=cost_brl)
         result = score_product(ali, market, cost)
-        assert 0.0 <= result.score_total <= 1.0, (
-            f"score_total={result.score_total} out of bounds for avg={avg_price} cost={cost_brl}"
-        )
+        assert (
+            0.0 <= result.score_total <= 1.0
+        ), f"score_total={result.score_total} out of bounds for avg={avg_price} cost={cost_brl}"
 
 
 def test_score_dimensions_logistica():
@@ -112,5 +112,3 @@ def test_score_formula_weights():
     assert result.score_oportunidade == pytest.approx(0.60, abs=0.001)
     assert result.score_tendencia == pytest.approx(0.5, abs=0.001)
     assert result.score_logistica == pytest.approx(1.0, abs=0.001)
-
-

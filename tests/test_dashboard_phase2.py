@@ -22,11 +22,13 @@ def _make_client(monkeypatch):
     monkeypatch.setenv("DASHBOARD_SESSION_SECRET", "test-secret-key")
     from fastapi.testclient import TestClient
     from app.main import app
+
     return TestClient(app, follow_redirects=False)
 
 
 def _signed_cookie(username: str = "admin") -> str:
     from itsdangerous import URLSafeSerializer
+
     s = URLSafeSerializer("test-secret-key", salt="session")
     return s.dumps({"user": username})
 
@@ -61,6 +63,7 @@ def _minimal_scan(date: str = "2026-01-15", product_id: str = "p1") -> dict:
 # 1. Explorer page
 # ---------------------------------------------------------------------------
 
+
 def test_explorer_without_auth_redirects(monkeypatch):
     client = _make_client(monkeypatch)
     resp = client.get("/dashboard/explorer")
@@ -70,6 +73,7 @@ def test_explorer_without_auth_redirects(monkeypatch):
 
 def test_explorer_with_auth_returns_200(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -79,6 +83,7 @@ def test_explorer_with_auth_returns_200(monkeypatch, tmp_path):
 
 def test_explorer_no_bootstrap(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -88,6 +93,7 @@ def test_explorer_no_bootstrap(monkeypatch, tmp_path):
 
 def test_explorer_has_oklch_tokens(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -98,6 +104,7 @@ def test_explorer_has_oklch_tokens(monkeypatch, tmp_path):
 
 def test_explorer_renders_products(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
     monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
@@ -113,6 +120,7 @@ def test_explorer_renders_products(monkeypatch, tmp_path):
 # 2. Scanner page
 # ---------------------------------------------------------------------------
 
+
 def test_scanner_without_auth_redirects(monkeypatch):
     client = _make_client(monkeypatch)
     resp = client.get("/dashboard/scanner")
@@ -122,6 +130,7 @@ def test_scanner_without_auth_redirects(monkeypatch):
 
 def test_scanner_with_auth_returns_200(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -131,6 +140,7 @@ def test_scanner_with_auth_returns_200(monkeypatch, tmp_path):
 
 def test_scanner_no_bootstrap(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -140,6 +150,7 @@ def test_scanner_no_bootstrap(monkeypatch, tmp_path):
 
 def test_scanner_shows_history(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
     monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
@@ -153,6 +164,7 @@ def test_scanner_shows_history(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 # 3. Settings page
 # ---------------------------------------------------------------------------
+
 
 def test_settings_without_auth_redirects(monkeypatch):
     client = _make_client(monkeypatch)
@@ -188,6 +200,7 @@ def test_settings_masks_sensitive_fields(monkeypatch):
 # 4. JSON API — /dashboard/products
 # ---------------------------------------------------------------------------
 
+
 def test_products_api_without_auth_redirects(monkeypatch):
     client = _make_client(monkeypatch)
     resp = client.get("/dashboard/products")
@@ -196,6 +209,7 @@ def test_products_api_without_auth_redirects(monkeypatch):
 
 def test_products_api_returns_json_list(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
     monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
@@ -213,6 +227,7 @@ def test_products_api_returns_json_list(monkeypatch, tmp_path):
 
 def test_products_api_deduplicates_by_product_id(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
     monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
@@ -228,6 +243,7 @@ def test_products_api_deduplicates_by_product_id(monkeypatch, tmp_path):
 
 def test_products_api_min_score_filter(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
     monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
@@ -242,6 +258,7 @@ def test_products_api_min_score_filter(monkeypatch, tmp_path):
 
 def test_products_api_empty_when_no_scans(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -254,8 +271,10 @@ def test_products_api_empty_when_no_scans(monkeypatch, tmp_path):
 # 5. JSON API — /dashboard/scans
 # ---------------------------------------------------------------------------
 
+
 def test_scans_api_returns_json_list(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
     monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
@@ -276,6 +295,7 @@ def test_scans_api_returns_json_list(monkeypatch, tmp_path):
 
 def test_scans_api_empty_when_no_scans(monkeypatch, tmp_path):
     import app.storage as storage_module
+
     monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -287,6 +307,7 @@ def test_scans_api_empty_when_no_scans(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 # 6. POST /dashboard/scan/trigger
 # ---------------------------------------------------------------------------
+
 
 def test_scan_trigger_without_auth_redirects(monkeypatch):
     client = _make_client(monkeypatch)
@@ -322,6 +343,7 @@ def test_scan_trigger_with_categories_returns_303(monkeypatch):
 # 7. GET /dashboard/scan/{scan_id}/status
 # ---------------------------------------------------------------------------
 
+
 def test_scan_status_unknown_returns_not_found(monkeypatch):
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -331,11 +353,14 @@ def test_scan_status_unknown_returns_not_found(monkeypatch):
 
 def test_scan_status_returns_running_after_trigger(monkeypatch):
     import uuid as uuid_lib
+
     known_uuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
-    with patch("app.routers.dashboard.run_daily_scan", new_callable=AsyncMock) as mock_scan, \
-         patch("app.routers.dashboard.uuid_lib.uuid4", return_value=uuid_lib.UUID(known_uuid)):
+    with (
+        patch("app.routers.dashboard.run_daily_scan", new_callable=AsyncMock) as mock_scan,
+        patch("app.routers.dashboard.uuid_lib.uuid4", return_value=uuid_lib.UUID(known_uuid)),
+    ):
         mock_scan.return_value = None
         client.post("/dashboard/scan/trigger", cookies={"session": cookie})
     status_resp = client.get(f"/dashboard/scan/{known_uuid}/status", cookies={"session": cookie})
@@ -348,6 +373,7 @@ def test_scan_status_returns_running_after_trigger(monkeypatch):
 # ---------------------------------------------------------------------------
 # 8. POST /dashboard/settings/telegram-test
 # ---------------------------------------------------------------------------
+
 
 def test_telegram_test_without_auth_redirects(monkeypatch):
     client = _make_client(monkeypatch)

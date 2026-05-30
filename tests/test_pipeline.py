@@ -7,6 +7,7 @@ from app.analyzers.mercado_livre import BRMarket
 
 def _ali_products(n: int):
     from app.aliexpress import AliExpressProduct
+
     return [
         AliExpressProduct(product_id=f"p{i}", title=f"Product {i}", price_usd=10.0)
         for i in range(n)
@@ -58,7 +59,7 @@ async def test_results_sorted_by_score(monkeypatch):
     monkeypatch.setattr("app.pipeline.CATEGORIES", ["cat1"])
 
     markets = [
-        _market(result_count=10),   # menor score_demanda → score mais baixo
+        _market(result_count=10),  # menor score_demanda → score mais baixo
         _market(result_count=50),
         _market(result_count=100),  # maior score_demanda → score mais alto
     ]

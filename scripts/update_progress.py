@@ -1,4 +1,5 @@
 """Sincroniza .openspec/progress.md com o estado real de .openspec/changes/."""
+
 from pathlib import Path
 
 OPENSPEC_DIR = Path(".openspec")
