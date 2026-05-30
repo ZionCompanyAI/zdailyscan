@@ -54,3 +54,15 @@ def test_scrapers_package_exports_get_hot_products():
     from app.scrapers import get_hot_products  # noqa: F401 — importação é o teste
 
     assert callable(get_hot_products)
+
+
+def test_endpoint_count_inclui_produtos_baixo_rating():
+    """Endpoint retorna produtos com rating < 4.9 — min_rating=0.0 não filtra por rating."""
+    from app.main import app
+
+    client = TestClient(app)
+    with patch.dict(os.environ, {"SCRAPER_MODE": "mock"}):
+        response = client.get("/scrapers/aliexpress")
+    data = response.json()
+    low_rated = [p for p in data["products"] if p["rating"] < 4.9]
+    assert len(low_rated) > 0, "Expected products with rating < 4.9 — endpoint must not over-filter"
