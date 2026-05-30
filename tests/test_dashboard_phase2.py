@@ -304,6 +304,20 @@ def test_scan_trigger_redirects_to_scanner(monkeypatch):
     assert resp.headers["location"] == "/dashboard/scanner"
 
 
+def test_scan_trigger_with_categories_returns_303(monkeypatch):
+    client = _make_client(monkeypatch)
+    cookie = _signed_cookie()
+    with patch("app.routers.dashboard.run_daily_scan", new_callable=AsyncMock) as mock_scan:
+        mock_scan.return_value = None
+        resp = client.post(
+            "/dashboard/scan/trigger",
+            data={"categories": ["200003655", "100003070"]},
+            cookies={"session": cookie},
+        )
+    assert resp.status_code == 303
+    assert resp.headers["location"] == "/dashboard/scanner"
+
+
 # ---------------------------------------------------------------------------
 # 7. GET /dashboard/scan/{scan_id}/status
 # ---------------------------------------------------------------------------

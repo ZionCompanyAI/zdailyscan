@@ -49,10 +49,10 @@ def _load_all_products() -> list[dict]:
     return list(seen.values())
 
 
-async def _run_scan_background(scan_id: str) -> None:
+async def _run_scan_background(scan_id: str, categories: list[str] | None = None) -> None:
     _scan_status[scan_id] = {"status": "running", "product_count": 0}
     try:
-        result = await run_daily_scan(scan_id)
+        result = await run_daily_scan(scan_id, categories=categories)
         _storage.save_scan(result)
         _scan_status[scan_id] = {"status": "completed", "product_count": len(result.products)}
     except Exception:
@@ -263,13 +263,17 @@ def dashboard_scans(request: Request):
 
 
 @router.post("/scan/trigger")
-async def dashboard_scan_trigger(request: Request):
+async def dashboard_scan_trigger(
+    request: Request,
+    categories: list[str] = Form(default=[]),
+):
     user, redirect = _require_user(request)
     if redirect:
         return redirect
 
     scan_id = str(uuid_lib.uuid4())
-    asyncio.create_task(_run_scan_background(scan_id))
+    cats = categories if categories else None
+    asyncio.create_task(_run_scan_background(scan_id, categories=cats))
 
     return RedirectResponse(url="/dashboard/scanner", status_code=303)
 
