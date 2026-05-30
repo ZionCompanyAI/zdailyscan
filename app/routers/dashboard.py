@@ -1,8 +1,6 @@
 import asyncio
 import logging
 import os
-
-logger = logging.getLogger(__name__)
 import uuid as uuid_lib
 
 import app.storage as _storage
@@ -14,6 +12,8 @@ from fastapi.templating import Jinja2Templates
 from app.config import Settings
 from app.pipeline import CATEGORIES, ScanResult, get_active_categories, run_daily_scan
 from app.routers.auth import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/dashboard")
 templates = Jinja2Templates(directory="app/templates")
