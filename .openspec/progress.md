@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #85)
+- TASK-085: test — cobrir gaps de regressão #81/#82 (test_scraper_regressions.py + endpoint count) — arquivado 2026-05-30
+
 ## Concluído (issue #82)
 - TASK-082: fix(scraper) — SCRAPER_MODE=firecrawl respeitado mesmo com cookies — arquivado 2026-05-30
 
