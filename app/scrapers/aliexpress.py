@@ -100,7 +100,7 @@ async def _scrape_with_crawl4ai(
 
 
 async def get_hot_products(
-    category_id: str, min_rating: float = 4.9, max_results: int = 100
+    category_id: str, min_rating: float = 0.0, max_results: int = 100
 ) -> list[AliProduct]:
     mode = os.environ.get("SCRAPER_MODE", "crawl4ai")
 
