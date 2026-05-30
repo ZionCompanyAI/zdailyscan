@@ -130,39 +130,28 @@
 
 <div class="settings-grid">
 
-  <!-- AliExpress Credentials -->
+  <!-- AliExpress Session Cookies -->
   <div class="settings-card">
-    <p class="card-heading">AliExpress Credentials</p>
+    <p class="card-heading">AliExpress Session Cookies</p>
     <div class="setting-row">
-      <span class="setting-key">ALIEXPRESS_USERNAME</span>
+      <span class="setting-key">ALIEXPRESS_SESSION_COOKIES</span>
       <span class="setting-value">
-        {% if aliexpress_username_set %}
+        {% if aliexpress_cookies_set %}
           <span style="color:var(--color-success)">● Preenchido</span>
         {% else %}
           <span style="color:var(--color-text-muted)">○ Vazio</span>
         {% endif %}
       </span>
     </div>
-    <div class="setting-row">
-      <span class="setting-key">ALIEXPRESS_PASSWORD</span>
-      <span class="setting-value">
-        {% if aliexpress_password_set %}
-          <span style="color:var(--color-success)">● Preenchido</span>
-        {% else %}
-          <span style="color:var(--color-text-muted)">○ Vazio</span>
-        {% endif %}
-      </span>
-    </div>
-    <form method="POST" action="/dashboard/settings" style="margin-top:0.75rem;">
-      <div style="display:flex; flex-direction:column; gap:0.5rem;">
-        <input type="text" name="aliexpress_username" placeholder="Username (deixe vazio para não alterar)"
-               autocomplete="username"
-               style="background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius);color:var(--color-text);font-family:var(--font-sans);font-size:0.85rem;padding:0.45rem 0.7rem;width:100%;">
-        <input type="password" name="aliexpress_password" placeholder="Password (deixe vazio para não alterar)"
-               autocomplete="current-password"
-               style="background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius);color:var(--color-text);font-family:var(--font-sans);font-size:0.85rem;padding:0.45rem 0.7rem;width:100%;">
-      </div>
-      <button type="submit" class="btn" style="margin-top:0.75rem;">Salvar credenciais</button>
+    <p style="font-size:0.75rem;color:var(--color-text-muted);margin:0.6rem 0 0.4rem;">
+      Exporte os cookies do Chrome DevTools → Application → Cookies → aliexpress.com — copie como JSON flat e cole aqui.
+    </p>
+    <form method="POST" action="/dashboard/settings" style="margin-top:0.5rem;">
+      <textarea name="aliexpress_session_cookies"
+                placeholder='{"ali_apache_id":"…","_tb_token_":"…"} (deixe vazio para não alterar)'
+                rows="4"
+                style="background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius);color:var(--color-text);font-family:'JetBrains Mono','Fira Mono',monospace;font-size:0.75rem;padding:0.45rem 0.7rem;width:100%;resize:vertical;"></textarea>
+      <button type="submit" class="btn" style="margin-top:0.75rem;">Salvar cookies</button>
     </form>
   </div>
 

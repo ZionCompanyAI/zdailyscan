@@ -42,13 +42,19 @@ async def _scrape_with_crawl4ai(category_id: str, max_results: int) -> list[AliP
     from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
     from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 
+    cookies_raw = os.getenv("ALIEXPRESS_SESSION_COOKIES", "")
+    try:
+        cookies: dict = _json.loads(cookies_raw) if cookies_raw else {}
+    except _json.JSONDecodeError:
+        cookies = {}
+
     url = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
     browser_config = BrowserConfig(headless=True)
     strategy = JsonCssExtractionStrategy(_PRODUCT_SCHEMA)
     run_config = CrawlerRunConfig(extraction_strategy=strategy)
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
-        result = await crawler.arun(url=url, config=run_config)
+        result = await crawler.arun(url=url, config=run_config, cookies=cookies)
 
     raw_content = result.extracted_content or "[]"
     if isinstance(raw_content, str):

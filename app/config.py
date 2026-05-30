@@ -6,8 +6,7 @@ class Settings(BaseSettings):
     aliexpress_app_key: str
     aliexpress_app_secret: str
     aliexpress_tracking_id: str
-    aliexpress_username: str | None = None
-    aliexpress_password: str | None = None
+    aliexpress_session_cookies: str | None = None
     telegram_bot_token: str
     mc_api_key: str
     mc_url: str
