@@ -3,12 +3,12 @@ import logging
 import os
 import uuid as uuid_lib
 
-import app.storage as _storage
 import httpx
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+import app.storage as _storage
 from app.config import Settings
 from app.pipeline import CATEGORIES, ScanResult, get_active_categories, run_daily_scan
 from app.routers.auth import get_current_user
@@ -194,8 +194,7 @@ def dashboard_settings(request: Request):
             "scraper_mode": os.environ.get("SCRAPER_MODE", "crawl4ai"),
             "usd_brl_rate": settings.usd_brl_rate,
             "categories": all_categories,
-            "aliexpress_username_set": bool(settings.aliexpress_username),
-            "aliexpress_password_set": bool(settings.aliexpress_password),
+            "aliexpress_session_cookies": settings.aliexpress_session_cookies,
         },
     )
 
@@ -203,16 +202,13 @@ def dashboard_settings(request: Request):
 @router.post("/settings")
 async def dashboard_settings_post(
     request: Request,
-    aliexpress_username: str = Form(default=""),
-    aliexpress_password: str = Form(default=""),
+    aliexpress_session_cookies: str = Form(default=""),
 ):
     user, redirect = _require_user(request)
     if redirect:
         return redirect
-    if aliexpress_username:
-        os.environ["ALIEXPRESS_USERNAME"] = aliexpress_username
-    if aliexpress_password:
-        os.environ["ALIEXPRESS_PASSWORD"] = aliexpress_password
+    if aliexpress_session_cookies:
+        os.environ["ALIEXPRESS_SESSION_COOKIES"] = aliexpress_session_cookies
     return RedirectResponse(url="/dashboard/settings", status_code=303)
 
 

@@ -1,4 +1,4 @@
-"""Tests for TASK-057: AliExpress credentials form in settings page."""
+"""Tests for TASK-057: AliExpress session cookies form in settings page."""
 
 import os
 
@@ -35,40 +35,38 @@ def _signed_cookie(username: str = "admin") -> str:
 # ---------------------------------------------------------------------------
 
 
-def test_settings_has_aliexpress_username_field(monkeypatch):
-    """Settings page deve conter ALIEXPRESS_USERNAME no HTML."""
+def test_settings_has_aliexpress_session_cookies_field(monkeypatch):
+    """Settings page deve conter textarea de session_cookies no HTML."""
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/settings", cookies={"session": cookie})
     assert resp.status_code == 200
-    assert "ALIEXPRESS_USERNAME" in resp.text
+    assert "aliexpress_session_cookies" in resp.text
 
 
-def test_settings_has_aliexpress_password_field(monkeypatch):
-    """Settings page deve conter ALIEXPRESS_PASSWORD no HTML."""
+def test_settings_has_aliexpress_credentials_section(monkeypatch):
+    """Settings page deve conter seção AliExpress Credentials."""
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/settings", cookies={"session": cookie})
     assert resp.status_code == 200
-    assert "ALIEXPRESS_PASSWORD" in resp.text
+    assert "AliExpress" in resp.text
 
 
 def test_settings_shows_aliexpress_status_empty(monkeypatch):
-    """Quando credenciais não configuradas, status deve indicar vazio."""
-    monkeypatch.delenv("ALIEXPRESS_USERNAME", raising=False)
-    monkeypatch.delenv("ALIEXPRESS_PASSWORD", raising=False)
+    """Quando cookies não configurados, status deve indicar vazio."""
+    monkeypatch.delenv("ALIEXPRESS_SESSION_COOKIES", raising=False)
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/settings", cookies={"session": cookie})
     assert resp.status_code == 200
     body = resp.text
-    assert "aliexpress_username_set" not in body or "Vazio" in body or "vazio" in body or "empty" in body.lower() or "○" in body
+    assert "Vazio" in body or "vazio" in body or "empty" in body.lower() or "○" in body
 
 
 def test_settings_shows_aliexpress_status_filled(monkeypatch):
-    """Quando credenciais configuradas, status deve indicar preenchido."""
-    monkeypatch.setenv("ALIEXPRESS_USERNAME", "myuser")
-    monkeypatch.setenv("ALIEXPRESS_PASSWORD", "mypass")
+    """Quando cookies configurados, status deve indicar preenchido."""
+    monkeypatch.setenv("ALIEXPRESS_SESSION_COOKIES", '[{"name":"sid","value":"abc"}]')
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/settings", cookies={"session": cookie})
@@ -86,20 +84,18 @@ def test_settings_aliexpress_form_posts_to_dashboard_settings(monkeypatch):
     assert 'action="/dashboard/settings"' in resp.text or "action=\"/dashboard/settings\"" in resp.text
 
 
-def test_settings_aliexpress_does_not_expose_values(monkeypatch):
-    """Settings não deve exibir os valores das credenciais."""
-    monkeypatch.setenv("ALIEXPRESS_USERNAME", "supersecretuser")
-    monkeypatch.setenv("ALIEXPRESS_PASSWORD", "supersecretpass")
+def test_settings_aliexpress_does_not_expose_cookie_values(monkeypatch):
+    """Settings não deve exibir os valores dos cookies na página quando vazio."""
+    monkeypatch.delenv("ALIEXPRESS_SESSION_COOKIES", raising=False)
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/settings", cookies={"session": cookie})
     assert resp.status_code == 200
-    assert "supersecretuser" not in resp.text
-    assert "supersecretpass" not in resp.text
+    assert "supersecretcookie" not in resp.text
 
 
 # ---------------------------------------------------------------------------
-# 2. POST /dashboard/settings — save credentials
+# 2. POST /dashboard/settings — save session cookies
 # ---------------------------------------------------------------------------
 
 
@@ -108,7 +104,7 @@ def test_post_settings_without_auth_redirects(monkeypatch):
     client = _make_client(monkeypatch)
     resp = client.post(
         "/dashboard/settings",
-        data={"aliexpress_username": "user", "aliexpress_password": "pass"},
+        data={"aliexpress_session_cookies": '[{"name":"sid","value":"abc"}]'},
     )
     assert resp.status_code in (302, 303, 307)
     assert "/login" in resp.headers["location"]
@@ -120,49 +116,36 @@ def test_post_settings_with_auth_redirects_to_settings(monkeypatch):
     cookie = _signed_cookie()
     resp = client.post(
         "/dashboard/settings",
-        data={"aliexpress_username": "newuser", "aliexpress_password": "newpass"},
+        data={"aliexpress_session_cookies": '[{"name":"sid","value":"abc"}]'},
         cookies={"session": cookie},
     )
     assert resp.status_code == 303
     assert resp.headers["location"] == "/dashboard/settings"
 
 
-def test_post_settings_saves_username_to_env(monkeypatch):
-    """POST /dashboard/settings salva ALIEXPRESS_USERNAME em os.environ."""
-    monkeypatch.delenv("ALIEXPRESS_USERNAME", raising=False)
+def test_post_settings_saves_session_cookies_to_env(monkeypatch):
+    """POST /dashboard/settings salva ALIEXPRESS_SESSION_COOKIES em os.environ."""
+    monkeypatch.delenv("ALIEXPRESS_SESSION_COOKIES", raising=False)
+    client = _make_client(monkeypatch)
+    cookie = _signed_cookie()
+    cookies_json = '[{"name":"sid","value":"mytoken"}]'
+    client.post(
+        "/dashboard/settings",
+        data={"aliexpress_session_cookies": cookies_json},
+        cookies={"session": cookie},
+    )
+    assert os.environ.get("ALIEXPRESS_SESSION_COOKIES") == cookies_json
+
+
+def test_post_settings_empty_cookies_do_not_overwrite(monkeypatch):
+    """POST com cookies vazios não deve sobrescrever valor existente."""
+    existing = '[{"name":"sid","value":"existing"}]'
+    monkeypatch.setenv("ALIEXPRESS_SESSION_COOKIES", existing)
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     client.post(
         "/dashboard/settings",
-        data={"aliexpress_username": "myaliuser", "aliexpress_password": ""},
+        data={"aliexpress_session_cookies": ""},
         cookies={"session": cookie},
     )
-    assert os.environ.get("ALIEXPRESS_USERNAME") == "myaliuser"
-
-
-def test_post_settings_saves_password_to_env(monkeypatch):
-    """POST /dashboard/settings salva ALIEXPRESS_PASSWORD em os.environ."""
-    monkeypatch.delenv("ALIEXPRESS_PASSWORD", raising=False)
-    client = _make_client(monkeypatch)
-    cookie = _signed_cookie()
-    client.post(
-        "/dashboard/settings",
-        data={"aliexpress_username": "", "aliexpress_password": "myalipass"},
-        cookies={"session": cookie},
-    )
-    assert os.environ.get("ALIEXPRESS_PASSWORD") == "myalipass"
-
-
-def test_post_settings_empty_fields_do_not_overwrite(monkeypatch):
-    """POST com campos vazios não deve sobrescrever valores existentes."""
-    monkeypatch.setenv("ALIEXPRESS_USERNAME", "existinguser")
-    monkeypatch.setenv("ALIEXPRESS_PASSWORD", "existingpass")
-    client = _make_client(monkeypatch)
-    cookie = _signed_cookie()
-    client.post(
-        "/dashboard/settings",
-        data={"aliexpress_username": "", "aliexpress_password": ""},
-        cookies={"session": cookie},
-    )
-    assert os.environ.get("ALIEXPRESS_USERNAME") == "existinguser"
-    assert os.environ.get("ALIEXPRESS_PASSWORD") == "existingpass"
+    assert os.environ.get("ALIEXPRESS_SESSION_COOKIES") == existing
