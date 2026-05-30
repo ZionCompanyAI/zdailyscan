@@ -75,25 +75,22 @@ def test_telegram_chat_id_from_env(monkeypatch):
     assert s.telegram_chat_id == 9999999999
 
 
-def test_aliexpress_credentials_default_to_none(monkeypatch):
+def test_aliexpress_session_cookies_default_to_none(monkeypatch):
     _set_required(monkeypatch)
-    monkeypatch.delenv("ALIEXPRESS_USERNAME", raising=False)
-    monkeypatch.delenv("ALIEXPRESS_PASSWORD", raising=False)
+    monkeypatch.delenv("ALIEXPRESS_SESSION_COOKIES", raising=False)
 
     from app.config import Settings
 
     s = Settings()
-    assert s.aliexpress_username is None
-    assert s.aliexpress_password is None
+    assert s.aliexpress_session_cookies is None
 
 
-def test_aliexpress_credentials_load_from_env(monkeypatch):
+def test_aliexpress_session_cookies_load_from_env(monkeypatch):
     _set_required(monkeypatch)
-    monkeypatch.setenv("ALIEXPRESS_USERNAME", "user@example.com")
-    monkeypatch.setenv("ALIEXPRESS_PASSWORD", "s3cr3t")
+    cookies_json = '{"ali_apache_id":"abc","_tb_token_":"xyz"}'
+    monkeypatch.setenv("ALIEXPRESS_SESSION_COOKIES", cookies_json)
 
     from app.config import Settings
 
     s = Settings()
-    assert s.aliexpress_username == "user@example.com"
-    assert s.aliexpress_password == "s3cr3t"
+    assert s.aliexpress_session_cookies == cookies_json
