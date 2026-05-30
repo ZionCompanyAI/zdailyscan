@@ -132,8 +132,16 @@ O hook roda automaticamente em cada `git commit`: **ruff** verifica e corrige pr
 ## Testes
 
 ```bash
+# Testes unitários e integração (Python)
 pytest tests/
+
+# Testes E2E Playwright (smoke + contrato)
+# Requer servidor rodando em localhost:8000
+SCRAPER_MODE=mock BASE_URL=http://localhost:8000 npx playwright test \
+  tests/e2e/smoke.spec.ts tests/e2e/contract.spec.ts --reporter=list
 ```
+
+O gate E2E roda automaticamente em PRs e merge queue via `.github/workflows/e2e-gate.yml`.
 
 ## Deploy Railway
 

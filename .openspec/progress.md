@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #52)
+- TASK-052: Playwright E2E gate — smoke + contract + auth + dashboard specs + CI workflow — arquivado 2026-05-30
+
 ## Concluído (issue #12)
 - TASK-012: CI workflow — habilitar GitHub Merge Queue — arquivado 2026-05-29
 
