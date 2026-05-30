@@ -37,6 +37,8 @@ uvicorn app.main:app --reload
 | `ALIEXPRESS_APP_KEY` | Sim | App Key da API AliExpress Affiliate |
 | `ALIEXPRESS_APP_SECRET` | Sim | App Secret da API AliExpress Affiliate |
 | `ALIEXPRESS_TRACKING_ID` | Sim | Tracking ID para afiliados |
+| `ALIEXPRESS_USERNAME` | Não | Usuário AliExpress para scraping autenticado |
+| `ALIEXPRESS_PASSWORD` | Não | Senha AliExpress para scraping autenticado |
 | `TELEGRAM_BOT_TOKEN` | Sim | Token do bot Telegram para notificações |
 | `MC_API_KEY` | Sim | API Key do Mission Control |
 | `MC_URL` | Sim | URL do Mission Control (ex: https://orchestrator.zioncompanyai.com.br) |
