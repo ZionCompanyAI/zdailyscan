@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #82)
+- TASK-082: fix(scraper) — SCRAPER_MODE=firecrawl respeitado mesmo com cookies — arquivado 2026-05-30
+
 ## Concluído (issue #81)
 - TASK-081: fix(scraper) — min_rating default 4.9→0.0, regressão PR #77 — arquivado 2026-05-30
 
