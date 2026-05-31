@@ -21,6 +21,7 @@ async def get_products_via_firecrawl(
             headers=headers,
             json={
                 "url": url_to_scrape,
+                "timeout": 150000,
                 "formats": ["extract"],
                 "extract": {
                     "schema": {
@@ -40,7 +41,7 @@ async def get_products_via_firecrawl(
                     }
                 },
             },
-            timeout=60.0,
+            timeout=180.0,
         )
         resp.raise_for_status()
         data = resp.json()
