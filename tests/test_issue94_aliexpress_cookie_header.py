@@ -40,10 +40,10 @@ async def test_cookie_header_injected_from_env():
         "ALIEXPRESS_SESSION_COOKIES": json.dumps(cookies),
     }
 
-    captured_headers = {}
+    captured_json = {}
 
     async def fake_post(url, *, headers, json, timeout):
-        captured_headers.update(headers)
+        captured_json.update(json)
         mock_resp = MagicMock()
         mock_resp.raise_for_status = MagicMock()
         mock_resp.json.return_value = {"data": {"extract": []}}
@@ -63,18 +63,18 @@ async def test_cookie_header_injected_from_env():
 
             await mod.get_products_via_firecrawl("200003655", "http://fake-firecrawl")
 
-    assert "Cookie" in captured_headers, "Cookie header was not set"
-    assert "xman_us_f=abc123" in captured_headers["Cookie"]
-    assert "_tbtoken=xyz" in captured_headers["Cookie"]
+    assert "Cookie" in captured_json.get("headers", {}), "Cookie not found in Firecrawl body headers"
+    assert "xman_us_f=abc123" in captured_json["headers"]["Cookie"]
+    assert "_tbtoken=xyz" in captured_json["headers"]["Cookie"]
 
 
 @pytest.mark.asyncio
 async def test_cookie_header_absent_when_env_not_set():
     """When ALIEXPRESS_SESSION_COOKIES is not set, Cookie header must not be sent."""
-    captured_headers = {}
+    captured_json = {}
 
     async def fake_post(url, *, headers, json, timeout):
-        captured_headers.update(headers)
+        captured_json.update(json)
         mock_resp = MagicMock()
         mock_resp.raise_for_status = MagicMock()
         mock_resp.json.return_value = {"data": {"extract": []}}
@@ -100,7 +100,7 @@ async def test_cookie_header_absent_when_env_not_set():
 
             await mod.get_products_via_firecrawl("200003655", "http://fake-firecrawl")
 
-    assert "Cookie" not in captured_headers, "Cookie header should not be set when env var is missing"
+    assert "Cookie" not in captured_json.get("headers", {}), "Cookie should not be in body headers when env var is missing"
 
 
 @pytest.mark.asyncio
@@ -147,10 +147,10 @@ async def test_cookies_without_value_are_filtered():
         "ALIEXPRESS_SESSION_COOKIES": json.dumps(cookies),
     }
 
-    captured_headers = {}
+    captured_json = {}
 
     async def fake_post(url, *, headers, json, timeout):
-        captured_headers.update(headers)
+        captured_json.update(json)
         mock_resp = MagicMock()
         mock_resp.raise_for_status = MagicMock()
         mock_resp.json.return_value = {"data": {"extract": []}}
@@ -170,7 +170,7 @@ async def test_cookies_without_value_are_filtered():
 
             await mod.get_products_via_firecrawl("200003655", "http://fake-firecrawl")
 
-    assert "Cookie" in captured_headers
-    assert "valid_cookie=goodval" in captured_headers["Cookie"]
-    assert "empty_cookie" not in captured_headers["Cookie"]
-    assert "no_value_cookie" not in captured_headers["Cookie"]
+    assert "Cookie" in captured_json.get("headers", {})
+    assert "valid_cookie=goodval" in captured_json["headers"]["Cookie"]
+    assert "empty_cookie" not in captured_json["headers"]["Cookie"]
+    assert "no_value_cookie" not in captured_json["headers"]["Cookie"]

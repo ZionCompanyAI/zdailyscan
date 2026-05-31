@@ -15,6 +15,7 @@ async def get_products_via_firecrawl(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
+    _cookie_str = ""
     _cookies_raw = os.environ.get("ALIEXPRESS_SESSION_COOKIES", "")
     if _cookies_raw:
         try:
@@ -25,10 +26,13 @@ async def get_products_via_firecrawl(
                 for c in _cookie_list
                 if c.get("value")
             )
-            if _cookie_str:
-                headers["Cookie"] = _cookie_str
         except Exception:
             pass
+
+    # body_headers is forwarded by Firecrawl to AliExpress (not used for auth)
+    body_headers = {}
+    if _cookie_str:
+        body_headers["Cookie"] = _cookie_str
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(
@@ -36,6 +40,7 @@ async def get_products_via_firecrawl(
             headers=headers,
             json={
                 "url": url_to_scrape,
+                "headers": body_headers,
                 "timeout": 150000,
                 "formats": ["extract"],
                 "extract": {
