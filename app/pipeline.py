@@ -54,7 +54,7 @@ async def run_daily_scan(
         try:
             products = await get_hot_products(category_id)
         except Exception as exc:
-            logger.warning("scraper failed for category %s: %s", category_id, exc)
+            logger.warning("scraper failed for category %s: %r", category_id, exc)
             continue
         for product in products:
             try:

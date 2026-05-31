@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #91)
+- TASK-091: fix(scraper) — Firecrawl httpx timeout 60→180s, body timeout 150000ms, %r logger — arquivado 2026-05-31
+
 ## Concluído (issue #85)
 - TASK-085: test — cobrir gaps de regressão #81/#82 (test_scraper_regressions.py + endpoint count) — arquivado 2026-05-30
 
