@@ -8,12 +8,27 @@ from app.scrapers.models import AliProduct
 async def get_products_via_firecrawl(
     category_id: str, firecrawl_url: str, max_results: int = 100
 ) -> list[AliProduct]:
-    url_to_scrape = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
+    url_to_scrape = f"https://www.aliexpress.us/category/{category_id}/bestselling.html"
 
     api_key = os.environ.get("FIRECRAWL_API_KEY", "")
     headers = {}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
+
+    _cookies_raw = os.environ.get("ALIEXPRESS_SESSION_COOKIES", "")
+    if _cookies_raw:
+        try:
+            import json as _json
+            _cookie_list = _json.loads(_cookies_raw)
+            _cookie_str = "; ".join(
+                f"{c['name']}={c['value']}"
+                for c in _cookie_list
+                if c.get("value")
+            )
+            if _cookie_str:
+                headers["Cookie"] = _cookie_str
+        except Exception:
+            pass
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(
