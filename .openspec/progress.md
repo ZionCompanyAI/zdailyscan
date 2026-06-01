@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #143)
+- TASK-143: fix(scraper) — _scrape_with_scrapling substitui StealthyFetcher/Playwright por httpx.get + regex _dida_config_._init_data_ + _find_product_list recursivo — arquivado 2026-06-01
+
 ## Concluído (issue #139)
 - TASK-139: feat(scraper) — SCRAPER_MODE=scrapling com StealthyFetcher (HTTP puro, sem custos) + fallback automático firecrawl→scrapling em caso de 402 — arquivado 2026-06-01
 

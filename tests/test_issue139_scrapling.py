@@ -1,5 +1,5 @@
-"""Issue #139 — SCRAPER_MODE=scrapling com StealthyFetcher + fallback firecrawl→scrapling."""
-import asyncio
+"""Issue #139 — SCRAPER_MODE=scrapling + fallback firecrawl→scrapling (httpx-based)."""
+import json
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -18,13 +18,39 @@ _FAKE_PRODUCT = AliProduct(
     category_id="200003655",
 )
 
+_PRODUCT_ITEM = {
+    "productId": "888",
+    "title": {"displayTitle": "Scrapling Product"},
+    "prices": {"salePrice": {"minPrice": 5.99}},
+    "star_rating": "0.0",
+    "real_trade_count": "0",
+    "image": {"imgUrl": "//ae01.alicdn.com/kf/scrapling.jpg"},
+}
+
+_INIT_DATA = {"data": {"resultList": [_PRODUCT_ITEM]}}
+
+
+def _make_html(data: dict | None = None) -> str:
+    if data is None:
+        return "<html><script>window.foo = 1;</script></html>"
+    return (
+        f"<html><script>window._dida_config_._init_data_ = {json.dumps(data)};"
+        "</script></html>"
+    )
+
+
+def _make_resp(html: str) -> MagicMock:
+    resp = MagicMock()
+    resp.text = html
+    resp.raise_for_status.return_value = None
+    return resp
+
 
 def _make_mock_page(cards: list[dict] | None = None):
-    """Cria um mock de página Scrapling com cards simulados."""
+    """Mantido para compatibilidade — não é mais usado na implementação."""
     page = MagicMock()
 
     if cards is None:
-        # Página sem cards — retorna lista vazia
         page.css.return_value = []
         return page
 
@@ -98,32 +124,19 @@ async def test_scrapling_mode_does_not_call_firecrawl():
 @pytest.mark.asyncio
 async def test_scrapling_returns_aliproducts_with_valid_fields():
     """_scrape_with_scrapling retorna lista de AliProduct com campos preenchidos."""
-    cards = [
-        {
-            "title": "Test Widget",
-            "price": "US$ 12.50",
-            "href": "https://www.aliexpress.com/item/888.html",
-            "image": "https://ae01.alicdn.com/kf/test.jpg",
-        }
-    ]
-    mock_page = _make_mock_page(cards)
-
-    with patch("asyncio.to_thread", new_callable=AsyncMock, return_value=mock_page):
+    with patch("httpx.get", return_value=_make_resp(_make_html(_INIT_DATA))):
         products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert isinstance(products, list)
-    # Produto deve ter product_id e title preenchidos
-    if products:
-        assert all(isinstance(p, AliProduct) for p in products)
-        assert all(p.category_id == "200003655" for p in products)
+    assert len(products) == 1
+    assert all(isinstance(p, AliProduct) for p in products)
+    assert all(p.category_id == "200003655" for p in products)
 
 
 @pytest.mark.asyncio
 async def test_scrapling_empty_page_returns_empty_list():
-    """_scrape_with_scrapling retorna [] quando página não tem cards."""
-    mock_page = _make_mock_page(cards=None)  # sem cards
-
-    with patch("asyncio.to_thread", new_callable=AsyncMock, return_value=mock_page):
+    """_scrape_with_scrapling retorna [] quando página não tem _init_data_."""
+    with patch("httpx.get", return_value=_make_resp(_make_html(None))):
         products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products == []
@@ -131,8 +144,8 @@ async def test_scrapling_empty_page_returns_empty_list():
 
 @pytest.mark.asyncio
 async def test_scrapling_exception_returns_empty_list():
-    """_scrape_with_scrapling retorna [] quando StealthyFetcher levanta exceção."""
-    with patch("asyncio.to_thread", new_callable=AsyncMock, side_effect=Exception("network error")):
+    """_scrape_with_scrapling retorna [] quando httpx.get levanta exceção."""
+    with patch("httpx.get", side_effect=Exception("network error")):
         products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products == []
@@ -220,25 +233,14 @@ async def test_scrapling_keyword_search_uses_wholesale_url():
 
     keyword = "wireless earbuds"
     expected_url_fragment = urllib.parse.quote_plus(keyword)
-
     captured_urls = []
 
-    def capture_fetch(url, **kwargs):
+    def fake_get(url, **kwargs):
         captured_urls.append(url)
-        return _make_mock_page(cards=None)
+        return _make_resp(_make_html(None))
 
-    with patch("asyncio.to_thread", new_callable=AsyncMock) as mock_thread:
-        mock_thread.side_effect = lambda fn, *args, **kwargs: asyncio.coroutine(
-            lambda: capture_fetch(*args, **kwargs)
-        )()
-        # Simpler: just check URL passed to asyncio.to_thread via StealthyFetcher
-        mock_thread.return_value = _make_mock_page(cards=None)
+    with patch("httpx.get", side_effect=fake_get):
         await _scrape_with_scrapling("200003655", max_results=10, keyword=keyword)
 
-    # Verificar que asyncio.to_thread foi chamado
-    mock_thread.assert_called_once()
-    # O segundo argumento de asyncio.to_thread é a URL
-    call_args = mock_thread.call_args
-    url_arg = call_args.args[1] if len(call_args.args) > 1 else None
-    if url_arg:
-        assert expected_url_fragment in url_arg or "wholesale" in url_arg
+    assert len(captured_urls) == 1
+    assert expected_url_fragment in captured_urls[0] or "wholesale" in captured_urls[0]
