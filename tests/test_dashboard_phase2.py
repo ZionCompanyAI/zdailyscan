@@ -74,7 +74,7 @@ def test_explorer_without_auth_redirects(monkeypatch):
 def test_explorer_with_auth_returns_200(monkeypatch, tmp_path):
     import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/explorer", cookies={"session": cookie})
@@ -84,7 +84,7 @@ def test_explorer_with_auth_returns_200(monkeypatch, tmp_path):
 def test_explorer_no_bootstrap(monkeypatch, tmp_path):
     import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/explorer", cookies={"session": cookie})
@@ -94,7 +94,7 @@ def test_explorer_no_bootstrap(monkeypatch, tmp_path):
 def test_explorer_has_oklch_tokens(monkeypatch, tmp_path):
     import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/explorer", cookies={"session": cookie})
@@ -107,7 +107,7 @@ def test_explorer_renders_products(monkeypatch, tmp_path):
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
-    monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     (scans_dir / "2026-01-15.json").write_text(json.dumps(_minimal_scan()))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -131,7 +131,7 @@ def test_scanner_without_auth_redirects(monkeypatch):
 def test_scanner_with_auth_returns_200(monkeypatch, tmp_path):
     import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/scanner", cookies={"session": cookie})
@@ -141,7 +141,7 @@ def test_scanner_with_auth_returns_200(monkeypatch, tmp_path):
 def test_scanner_no_bootstrap(monkeypatch, tmp_path):
     import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/scanner", cookies={"session": cookie})
@@ -153,7 +153,7 @@ def test_scanner_shows_history(monkeypatch, tmp_path):
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
-    monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     (scans_dir / "2026-01-15.json").write_text(json.dumps(_minimal_scan()))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -212,7 +212,7 @@ def test_products_api_returns_json_list(monkeypatch, tmp_path):
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
-    monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     (scans_dir / "2026-01-15.json").write_text(json.dumps(_minimal_scan()))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -230,7 +230,7 @@ def test_products_api_deduplicates_by_product_id(monkeypatch, tmp_path):
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
-    monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     # Same product_id in two scan files — should appear only once
     (scans_dir / "2026-01-15.json").write_text(json.dumps(_minimal_scan("2026-01-15", "p1")))
     (scans_dir / "2026-01-16.json").write_text(json.dumps(_minimal_scan("2026-01-16", "p1")))
@@ -246,7 +246,7 @@ def test_products_api_min_score_filter(monkeypatch, tmp_path):
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
-    monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     (scans_dir / "2026-01-15.json").write_text(json.dumps(_minimal_scan()))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -259,7 +259,7 @@ def test_products_api_min_score_filter(monkeypatch, tmp_path):
 def test_products_api_empty_when_no_scans(monkeypatch, tmp_path):
     import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/products", cookies={"session": cookie})
@@ -277,7 +277,7 @@ def test_scans_api_returns_json_list(monkeypatch, tmp_path):
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
-    monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     (scans_dir / "2026-01-15.json").write_text(json.dumps(_minimal_scan()))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -296,7 +296,7 @@ def test_scans_api_returns_json_list(monkeypatch, tmp_path):
 def test_scans_api_empty_when_no_scans(monkeypatch, tmp_path):
     import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/scans", cookies={"session": cookie})

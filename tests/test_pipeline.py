@@ -80,9 +80,7 @@ async def test_results_sorted_by_score(monkeypatch):
 
 async def test_scan_persisted_to_json(tmp_path, monkeypatch):
     """save_scan cria YYYY-MM-DD.json com estrutura correta."""
-    import app.storage as storage_module
-
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     monkeypatch.setattr("app.pipeline.CATEGORIES", ["cat1"])
 
     with (

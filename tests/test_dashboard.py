@@ -129,9 +129,7 @@ def test_dashboard_with_valid_session_returns_200(monkeypatch):
 
 
 def test_dashboard_date_not_found_returns_404(monkeypatch, tmp_path):
-    import app.storage as storage_module
-
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie("admin")
     resp = client.get("/dashboard/2000-01-01", cookies={"session": cookie})
@@ -145,11 +143,9 @@ def test_dashboard_date_not_found_returns_404(monkeypatch, tmp_path):
 
 def test_report_renders_product_fields(monkeypatch, tmp_path):
     """GET /dashboard/{date} deve renderizar título, score, margem e viável."""
-    import app.storage as storage_module
-
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
-    monkeypatch.setattr(storage_module, "SCANS_DIR", scans_dir)
 
     # Write a minimal scan file
     scan = {

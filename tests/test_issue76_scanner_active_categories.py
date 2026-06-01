@@ -35,7 +35,7 @@ def test_scanner_only_active_category_is_checked(monkeypatch, tmp_path):
     """When SCAN_CATEGORIES has only one ID, only that category checkbox is checked."""
     import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     monkeypatch.setenv("SCAN_CATEGORIES", "200003655")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -56,7 +56,7 @@ def test_scanner_all_checked_when_no_scan_categories_set(monkeypatch, tmp_path):
     """When SCAN_CATEGORIES is unset (default), all categories are active and checked."""
     import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     monkeypatch.delenv("SCAN_CATEGORIES", raising=False)
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
@@ -72,7 +72,7 @@ def test_scanner_empty_scan_categories_falls_back_to_all_checked(monkeypatch, tm
     """When SCAN_CATEGORIES is empty string, get_active_categories falls back to all defaults."""
     import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     monkeypatch.setenv("SCAN_CATEGORIES", "")
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
