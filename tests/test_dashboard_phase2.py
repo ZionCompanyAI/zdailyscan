@@ -72,7 +72,6 @@ def test_explorer_without_auth_redirects(monkeypatch):
 
 
 def test_explorer_with_auth_returns_200(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
@@ -82,7 +81,6 @@ def test_explorer_with_auth_returns_200(monkeypatch, tmp_path):
 
 
 def test_explorer_no_bootstrap(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
@@ -92,7 +90,6 @@ def test_explorer_no_bootstrap(monkeypatch, tmp_path):
 
 
 def test_explorer_has_oklch_tokens(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
@@ -103,7 +100,6 @@ def test_explorer_has_oklch_tokens(monkeypatch, tmp_path):
 
 
 def test_explorer_renders_products(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
@@ -129,7 +125,6 @@ def test_scanner_without_auth_redirects(monkeypatch):
 
 
 def test_scanner_with_auth_returns_200(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
@@ -139,7 +134,6 @@ def test_scanner_with_auth_returns_200(monkeypatch, tmp_path):
 
 
 def test_scanner_no_bootstrap(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
@@ -149,7 +143,6 @@ def test_scanner_no_bootstrap(monkeypatch, tmp_path):
 
 
 def test_scanner_shows_history(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
@@ -208,7 +201,6 @@ def test_products_api_without_auth_redirects(monkeypatch):
 
 
 def test_products_api_returns_json_list(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
@@ -226,7 +218,6 @@ def test_products_api_returns_json_list(monkeypatch, tmp_path):
 
 
 def test_products_api_deduplicates_by_product_id(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
@@ -242,7 +233,6 @@ def test_products_api_deduplicates_by_product_id(monkeypatch, tmp_path):
 
 
 def test_products_api_min_score_filter(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
@@ -257,7 +247,6 @@ def test_products_api_min_score_filter(monkeypatch, tmp_path):
 
 
 def test_products_api_empty_when_no_scans(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
@@ -273,7 +262,6 @@ def test_products_api_empty_when_no_scans(monkeypatch, tmp_path):
 
 
 def test_scans_api_returns_json_list(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     scans_dir = tmp_path / "scans"
     scans_dir.mkdir()
@@ -294,7 +282,6 @@ def test_scans_api_returns_json_list(monkeypatch, tmp_path):
 
 
 def test_scans_api_empty_when_no_scans(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
