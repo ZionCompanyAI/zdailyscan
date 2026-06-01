@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #137)
+- TASK-137: fix — is_tech_product() com word-boundary regex em pipeline.py; filtro aplicado no loop do scan; 14 testes novos + regressão test_pipeline corrigida — arquivado 2026-06-01
+
 ## Concluído (issue #129)
 - TASK-129: chore — remover categorias não-tech (Home & Garden 200000828, Sports 200000834) de CATEGORIES e CATEGORY_NAMES; 4 testes atualizados para 3 categorias — arquivado 2026-06-01
 
