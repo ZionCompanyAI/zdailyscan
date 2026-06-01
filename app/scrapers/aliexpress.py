@@ -352,73 +352,100 @@ async def _scrape_with_firecrawl(
     return products
 
 
+def _find_product_list(data) -> list:
+    """Busca recursivamente a lista que contém dicts com 'productId'."""
+    if isinstance(data, list):
+        if data and any(isinstance(it, dict) and "productId" in it for it in data[:5]):
+            return data
+        for item in data:
+            result = _find_product_list(item)
+            if result:
+                return result
+    elif isinstance(data, dict):
+        for v in data.values():
+            result = _find_product_list(v)
+            if result:
+                return result
+    return []
+
+
 async def _scrape_with_scrapling(
     category_id: str, max_results: int, keyword: str = ""
 ) -> list[AliProduct]:
-    import asyncio
     import re
     import urllib.parse
+
+    from scrapling import Fetcher
 
     if keyword:
         url = f"https://www.aliexpress.com/wholesale?SearchText={urllib.parse.quote_plus(keyword)}&SortType=total_tranpro_desc"
     else:
         url = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
 
-    def _fetch():
-        from scrapling.fetchers import StealthyFetcher
-
-        return StealthyFetcher.fetch(url, headless=True, network_idle=True)
-
     try:
-        page = await asyncio.to_thread(_fetch)
+        page = Fetcher.get(
+            url,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                ),
+                "Accept-Language": "en-US,en;q=0.5",
+            },
+            timeout=30,
+        )
+        html = str(page.content)
+
+        match = re.search(
+            r"window\._dida_config_\._init_data_\s*=\s*(\{.+?\});",
+            html,
+            re.DOTALL,
+        )
+        if not match:
+            logger.warning("[scraper:scrapling] _init_data_ não encontrado em %s", url)
+            return []
+
+        data = _json.loads(match.group(1))
+        item_list = _find_product_list(data)
+
+        products: list[AliProduct] = []
+        for item in item_list[:max_results]:
+            try:
+                product_id = str(item.get("productId", ""))
+                title = item.get("title", {}).get("displayTitle", "")
+                if not product_id or not title:
+                    continue
+
+                price_info = item.get("prices", {})
+                sale_price = price_info.get("salePrice", price_info.get("originalPrice", {}))
+                price_usd = float(sale_price.get("minPrice", 0) or 0)
+                rating = float(item.get("star_rating", 0) or 0)
+                sale_count = int(item.get("real_trade_count", 0) or 0)
+                img_url = item.get("image", {}).get("imgUrl", "")
+                if img_url and not img_url.startswith("http"):
+                    img_url = "https:" + img_url
+
+                products.append(
+                    AliProduct(
+                        product_id=product_id,
+                        title=title,
+                        price_usd=price_usd,
+                        sale_count_30d=sale_count,
+                        rating=rating,
+                        image_url=img_url,
+                        product_url=f"https://www.aliexpress.com/item/{product_id}.html",
+                        category_id=category_id,
+                    )
+                )
+            except Exception:
+                continue
+
+        logger.info("[scraper:scrapling] category=%s extracted=%d", category_id, len(products))
+        return products
+
     except Exception as exc:
         logger.warning("[scraper:scrapling] category=%s keyword=%r failed: %r", category_id, keyword, exc)
         return []
-
-    cards = page.css(".search-item-card-wrapper-gallery")
-    if not cards:
-        cards = page.css("[class*=search-item-card]")
-    if not cards:
-        logger.warning("[scraper:scrapling] category=%s no cards found", category_id)
-        return []
-
-    products: list[AliProduct] = []
-    for card in cards[:max_results]:
-        try:
-            title = card.css("[class*=item-title]::text").get(default="")
-            price_text = card.css("[class*=price]::text").get(default="0")
-            product_url = card.css("a::attr(href)").get(default="")
-            image_url = (
-                card.css("img::attr(src)").get(default="")
-                or card.css("img::attr(lazy-src)").get(default="")
-            )
-
-            if not title or not product_url:
-                continue
-
-            price = float(re.sub(r"[^0-9.]", "", price_text) or 0)
-            match = re.search(r"/(\d+)\.html", product_url)
-            if not match:
-                continue
-
-            product_id = match.group(1)
-            products.append(
-                AliProduct(
-                    product_id=product_id,
-                    title=title,
-                    price_usd=price,
-                    sale_count_30d=0,
-                    rating=0.0,
-                    image_url=image_url,
-                    product_url=product_url if product_url.startswith("http") else f"https:{product_url}",
-                    category_id=category_id,
-                )
-            )
-        except (ValueError, TypeError):
-            continue
-
-    logger.info("[scraper:scrapling] category=%s extracted=%d", category_id, len(products))
-    return products
 
 
 async def get_hot_products(
