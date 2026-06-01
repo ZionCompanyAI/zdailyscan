@@ -64,18 +64,16 @@ def test_settings_no_tracking_id_field(monkeypatch):
 
 
 def test_settings_has_category_checkboxes(monkeypatch):
-    """Settings deve ter checkboxes para as 5 categorias."""
+    """Settings deve ter checkboxes para as 3 categorias."""
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/settings", cookies={"session": cookie})
     assert resp.status_code == 200
     body = resp.text
-    # Deve conter os 5 IDs de categoria como checkboxes
+    # Deve conter os 3 IDs de categoria como checkboxes
     assert "200003655" in body
     assert "100003070" in body
     assert "200000783" in body
-    assert "200000828" in body
-    assert "200000834" in body
     assert 'type="checkbox"' in body
 
 
@@ -189,7 +187,7 @@ def test_pipeline_get_active_categories_fallback(monkeypatch):
 
     result = get_active_categories()
     assert result == CATEGORIES
-    assert len(result) == 5
+    assert len(result) == 3
 
 
 def test_pipeline_get_active_categories_ignores_invalid(monkeypatch):
