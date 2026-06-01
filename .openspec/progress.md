@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #126)
+- TASK-126: fix(scraper) — _scrape_with_http() via httpx JSON API, SCRAPER_MODE default http, crawl4ai fallback — arquivado 2026-06-01
+
 ## Concluído (issue #124)
 - TASK-124: fix(scraper) — domain+path injetados nos cookies AliExpress para Playwright — arquivado 2026-06-01
 
