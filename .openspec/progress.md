@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #145)
+- TASK-145: fix(scraper) — sanitize `undefined` JS token via re.sub antes do raw_decode + multi-pattern fallback (_init_data_ → runParams → __INITIAL_STATE__) para keyword search + None-safe numeric parsing — arquivado 2026-06-01
+
 ## Concluído (issue #143)
 - TASK-143: fix(scraper) — _scrape_with_scrapling substitui StealthyFetcher/Playwright por httpx.get + regex _dida_config_._init_data_ + _find_product_list recursivo — arquivado 2026-06-01
 

@@ -402,15 +402,27 @@ async def _scrape_with_scrapling(
         logger.warning("[scraper:scrapling] category=%s keyword=%r failed: %r", category_id, keyword, exc)
         return []
 
-    m = re.search(r"window\._dida_config_\._init_data_\s*=\s*", html)
+    _JS_PATTERNS = [
+        r"window\._dida_config_\._init_data_\s*=\s*",
+        r"window\.runParams\s*=\s*",
+        r"window\.__INITIAL_STATE__\s*=\s*",
+    ]
+    m = None
+    for _pat in _JS_PATTERNS:
+        m = re.search(_pat, html)
+        if m:
+            break
     if not m:
-        logger.warning("[scraper:scrapling] category=%s no _init_data_ found", category_id)
+        logger.warning("[scraper:scrapling] category=%s keyword=%r no JS data found", category_id, keyword)
         return []
 
+    raw = html[m.end():]
+    raw = re.sub(r"\bundefined\b", "null", raw)
+
     try:
-        data, _ = _json.JSONDecoder().raw_decode(html, m.end())
+        data, _ = _json.JSONDecoder().raw_decode(raw)
     except Exception as exc:
-        logger.warning("[scraper:scrapling] category=%s json parse failed: %r", category_id, exc)
+        logger.warning("[scraper:scrapling] category=%s keyword=%r json parse failed: %r", category_id, keyword, exc)
         return []
 
     items = _find_product_list(data) or []
@@ -427,9 +439,9 @@ async def _scrape_with_scrapling(
             prices = item.get("prices", {})
             sale_price = prices.get("salePrice", {}) if isinstance(prices, dict) else {}
             price_raw = str(sale_price.get("minPrice", 0) if isinstance(sale_price, dict) else 0)
-            rating_raw = str(item.get("star_rating", item.get("starRating", "0"))).strip()
+            rating_raw = str(item.get("star_rating") or item.get("starRating") or "0").strip()
             trade_raw = (
-                str(item.get("real_trade_count", item.get("tradeCount", "0")))
+                str(item.get("real_trade_count") or item.get("tradeCount") or "0")
                 .replace("+", "")
                 .replace(",", "")
                 .strip()
