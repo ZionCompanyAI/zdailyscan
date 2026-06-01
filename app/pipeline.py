@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from app.scrapers import get_hot_products
 from app.analyzers.import_calculator import calculate_import_cost
-from app.analyzers.mercado_livre import BRMarket, search_br_market
+from app.analyzers.mercado_livre import BRMarket, get_ml_token, search_br_market
 from app.scoring.scorer import AliProduct, ProductScore, score_product
 from app.reporters.telegram_reporter import send_daily_report
 from app.reporters.file_reporter import save_daily_report
@@ -50,6 +50,8 @@ async def run_daily_scan(
     today = date.today().isoformat()
     all_scores: list[ProductScore] = []
 
+    ml_token = await get_ml_token()
+
     for category_id in categories or get_active_categories():
         try:
             products = await get_hot_products(category_id)
@@ -58,7 +60,7 @@ async def run_daily_scan(
             continue
         for product in products:
             try:
-                market = await search_br_market(product.title)
+                market = await search_br_market(product.title, ml_token=ml_token)
             except Exception as exc:
                 logger.warning("market search failed: %s", exc)
                 market = BRMarket(

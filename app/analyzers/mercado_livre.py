@@ -18,11 +18,29 @@ class BRMarket(BaseModel):
     top_listings: list[str]
 
 
-async def search_br_market(query: str) -> BRMarket:
+async def get_ml_token() -> str:
+    """Return a fresh ML token from auth-bus, or fall back to the static env var."""
+    bus_url = os.environ.get("AUTH_BUS_URL", "")
+    bus_key = os.environ.get("AUTH_BUS_API_KEY", "")
+    if bus_url and bus_key:
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(
+                    f"{bus_url}/tokens/mercadolibre",
+                    headers={"x-api-key": bus_key, "User-Agent": "zdailyscan/1.0"},
+                    timeout=10.0,
+                )
+                if resp.status_code == 200:
+                    return resp.json().get("access_token", "")
+        except Exception as exc:
+            logger.warning("auth-bus token fetch failed, using fallback: %s", exc)
+    return os.environ.get("ML_USER_ACCESS_TOKEN", "")
+
+
+async def search_br_market(query: str, ml_token: str = "") -> BRMarket:
     headers = {}
-    token = os.environ.get("ML_USER_ACCESS_TOKEN", "")
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+    if ml_token:
+        headers["Authorization"] = f"Bearer {ml_token}"
 
     try:
         async with httpx.AsyncClient() as client:

@@ -37,6 +37,7 @@ async def test_search_br_market_returns_empty_on_timeout():
 
 @pytest.mark.asyncio
 async def test_search_br_market_sends_auth_token():
+    """Token is now passed as ml_token param (resolved upstream by get_ml_token)."""
     mock_response = MagicMock()
     mock_response.raise_for_status = MagicMock()
     mock_response.json.return_value = {"results": [], "paging": {"total": 0}}
@@ -47,8 +48,7 @@ async def test_search_br_market_sends_auth_token():
     mock_client.get = AsyncMock(return_value=mock_response)
 
     with patch("app.analyzers.mercado_livre.httpx.AsyncClient", return_value=mock_client):
-        with patch.dict("os.environ", {"ML_USER_ACCESS_TOKEN": "tok-abc"}):
-            await search_br_market("test product")
+        await search_br_market("test product", ml_token="tok-abc")
 
     call_kwargs = mock_client.get.call_args.kwargs
     assert call_kwargs["headers"]["Authorization"] == "Bearer tok-abc"
