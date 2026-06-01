@@ -213,6 +213,36 @@ def _deep_get(d: dict, keys: list) -> list | None:
     return d if isinstance(d, list) else None
 
 
+def _find_product_list(data, _depth: int = 0) -> list | None:
+    """Recursively search for a list of dicts containing 'productId'."""
+    if _depth > 10:
+        return None
+    if isinstance(data, list) and data and isinstance(data[0], dict) and "productId" in data[0]:
+        return data
+    if isinstance(data, dict):
+        for v in data.values():
+            result = _find_product_list(v, _depth + 1)
+            if result:
+                return result
+    if isinstance(data, list):
+        for item in data:
+            result = _find_product_list(item, _depth + 1)
+            if result:
+                return result
+    return None
+
+
+_SCRAPLING_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Referer": "https://www.aliexpress.com/",
+}
+
+
 async def _scrape_with_http(
     category_id: str, max_results: int, session_cookies: str = ""
 ) -> list[AliProduct]:
@@ -355,62 +385,71 @@ async def _scrape_with_firecrawl(
 async def _scrape_with_scrapling(
     category_id: str, max_results: int, keyword: str = ""
 ) -> list[AliProduct]:
-    import asyncio
     import re
     import urllib.parse
+    import httpx
 
     if keyword:
         url = f"https://www.aliexpress.com/wholesale?SearchText={urllib.parse.quote_plus(keyword)}&SortType=total_tranpro_desc"
     else:
         url = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
 
-    def _fetch():
-        from scrapling.fetchers import StealthyFetcher
-
-        return StealthyFetcher.fetch(url, headless=True, network_idle=True)
-
     try:
-        page = await asyncio.to_thread(_fetch)
+        resp = httpx.get(url, headers=_SCRAPLING_HEADERS, follow_redirects=True, timeout=15)
+        resp.raise_for_status()
+        html = resp.text
     except Exception as exc:
         logger.warning("[scraper:scrapling] category=%s keyword=%r failed: %r", category_id, keyword, exc)
         return []
 
-    cards = page.css(".search-item-card-wrapper-gallery")
-    if not cards:
-        cards = page.css("[class*=search-item-card]")
-    if not cards:
-        logger.warning("[scraper:scrapling] category=%s no cards found", category_id)
+    m = re.search(r"window\._dida_config_\._init_data_\s*=\s*", html)
+    if not m:
+        logger.warning("[scraper:scrapling] category=%s no _init_data_ found", category_id)
         return []
 
+    try:
+        data, _ = _json.JSONDecoder().raw_decode(html, m.end())
+    except Exception as exc:
+        logger.warning("[scraper:scrapling] category=%s json parse failed: %r", category_id, exc)
+        return []
+
+    items = _find_product_list(data) or []
     products: list[AliProduct] = []
-    for card in cards[:max_results]:
+    for item in items[:max_results]:
         try:
-            title = card.css("[class*=item-title]::text").get(default="")
-            price_text = card.css("[class*=price]::text").get(default="0")
-            product_url = card.css("a::attr(href)").get(default="")
-            image_url = (
-                card.css("img::attr(src)").get(default="")
-                or card.css("img::attr(lazy-src)").get(default="")
+            pid = str(item.get("productId", "")).strip()
+            if not pid:
+                continue
+            title_obj = item.get("title", {})
+            title = (
+                title_obj.get("displayTitle", "") if isinstance(title_obj, dict) else str(title_obj)
             )
-
-            if not title or not product_url:
-                continue
-
-            price = float(re.sub(r"[^0-9.]", "", price_text) or 0)
-            match = re.search(r"/(\d+)\.html", product_url)
-            if not match:
-                continue
-
-            product_id = match.group(1)
+            prices = item.get("prices", {})
+            sale_price = prices.get("salePrice", {}) if isinstance(prices, dict) else {}
+            price_raw = str(sale_price.get("minPrice", 0) if isinstance(sale_price, dict) else 0)
+            rating_raw = str(item.get("star_rating", item.get("starRating", "0"))).strip()
+            trade_raw = (
+                str(item.get("real_trade_count", item.get("tradeCount", "0")))
+                .replace("+", "")
+                .replace(",", "")
+                .strip()
+            )
+            trade_num = trade_raw.split()[0] if trade_raw else "0"
+            img_obj = item.get("image", {})
+            img = (
+                img_obj.get("imgUrl", "") if isinstance(img_obj, dict) else str(img_obj)
+            ).strip()
+            if img.startswith("//"):
+                img = "https:" + img
             products.append(
                 AliProduct(
-                    product_id=product_id,
-                    title=title,
-                    price_usd=price,
-                    sale_count_30d=0,
-                    rating=0.0,
-                    image_url=image_url,
-                    product_url=product_url if product_url.startswith("http") else f"https:{product_url}",
+                    product_id=pid,
+                    title=str(title).strip(),
+                    price_usd=float(price_raw) if price_raw else 0.0,
+                    sale_count_30d=int(float(trade_num)) if trade_num else 0,
+                    rating=float(rating_raw) if rating_raw else 0.0,
+                    image_url=img,
+                    product_url=f"https://www.aliexpress.com/item/{pid}.html",
                     category_id=category_id,
                 )
             )
