@@ -31,6 +31,14 @@ def get_active_categories() -> list[str]:
     return filtered if filtered else CATEGORIES
 
 
+DEFAULT_KEYWORDS = "USB-C adapter,USB hub multiport,HDMI adapter,wireless charger,phone stand,laptop stand,bluetooth earphones,Thunderbolt hub,screen protector,power bank"
+
+
+def get_active_keywords() -> list[str]:
+    raw = os.getenv("SCAN_KEYWORDS", DEFAULT_KEYWORDS)
+    return [k.strip() for k in raw.split(",") if k.strip()]
+
+
 class ScanResult(BaseModel):
     scan_id: str
     date: str
@@ -48,11 +56,11 @@ async def run_daily_scan(
     today = date.today().isoformat()
     all_scores: list[ProductScore] = []
 
-    for category_id in categories or get_active_categories():
+    for keyword in get_active_keywords():
         try:
-            products = await get_hot_products(category_id)
+            products = await get_hot_products(category_id="", keyword=keyword, max_results=10)
         except Exception as exc:
-            logger.warning("scraper failed for category %s: %r", category_id, exc)
+            logger.warning("scraper failed for keyword %s: %r", keyword, exc)
             continue
         for product in products:
             try:
