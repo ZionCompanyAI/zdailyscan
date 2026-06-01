@@ -55,9 +55,8 @@ def test_dashboard_has_viewport_meta(monkeypatch):
 
 
 def test_explorer_has_viewport_meta(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/explorer", cookies={"session": cookie})
@@ -67,9 +66,8 @@ def test_explorer_has_viewport_meta(monkeypatch, tmp_path):
 
 
 def test_scanner_has_viewport_meta(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/scanner", cookies={"session": cookie})
@@ -96,9 +94,8 @@ def test_dashboard_has_bottom_nav(monkeypatch):
 
 
 def test_explorer_has_bottom_nav(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/explorer", cookies={"session": cookie})
@@ -106,9 +103,8 @@ def test_explorer_has_bottom_nav(monkeypatch, tmp_path):
 
 
 def test_scanner_has_bottom_nav(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/scanner", cookies={"session": cookie})
@@ -183,9 +179,8 @@ def test_login_button_min_height_44px(monkeypatch):
 
 
 def test_explorer_filters_collapsible(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/explorer", cookies={"session": cookie})
@@ -195,9 +190,8 @@ def test_explorer_filters_collapsible(monkeypatch, tmp_path):
 
 
 def test_explorer_grid_responsive(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/explorer", cookies={"session": cookie})
@@ -214,9 +208,8 @@ def test_explorer_grid_responsive(monkeypatch, tmp_path):
 
 
 def test_scanner_has_full_width_btn_mobile(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     resp = client.get("/dashboard/scanner", cookies={"session": cookie})
@@ -231,9 +224,8 @@ def test_scanner_has_full_width_btn_mobile(monkeypatch, tmp_path):
 
 
 def test_all_pages_no_bootstrap(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     for path in ["/dashboard", "/dashboard/explorer", "/dashboard/scanner", "/dashboard/settings"]:
@@ -242,9 +234,8 @@ def test_all_pages_no_bootstrap(monkeypatch, tmp_path):
 
 
 def test_all_pages_have_oklch(monkeypatch, tmp_path):
-    import app.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "SCANS_DIR", tmp_path / "scans")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     client = _make_client(monkeypatch)
     cookie = _signed_cookie()
     for path in ["/dashboard", "/dashboard/explorer", "/dashboard/scanner", "/dashboard/settings"]:

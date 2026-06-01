@@ -63,9 +63,9 @@ def _require_user(request: Request):
 def _load_all_products() -> list[dict]:
     """Aggregate products from all scans, deduplicating by product_id (keep latest)."""
     seen: dict[str, dict] = {}
-    if not _storage.SCANS_DIR.exists():
+    if not _storage._scans_dir().exists():
         return []
-    for scan_file in sorted(_storage.SCANS_DIR.glob("*.json"), reverse=True):
+    for scan_file in sorted(_storage._scans_dir().glob("*.json"), reverse=True):
         try:
             scan = ScanResult.model_validate_json(scan_file.read_text())
             for p in scan.products:
@@ -99,9 +99,9 @@ def dashboard_index(request: Request):
         return redirect
 
     dates: list[str] = []
-    if _storage.SCANS_DIR.exists():
+    if _storage._scans_dir().exists():
         dates = sorted(
-            [p.stem for p in _storage.SCANS_DIR.glob("*.json")],
+            [p.stem for p in _storage._scans_dir().glob("*.json")],
             reverse=True,
         )
 
@@ -162,8 +162,8 @@ def dashboard_scanner(request: Request):
         return redirect
 
     scans = []
-    if _storage.SCANS_DIR.exists():
-        for scan_file in sorted(_storage.SCANS_DIR.glob("*.json"), reverse=True):
+    if _storage._scans_dir().exists():
+        for scan_file in sorted(_storage._scans_dir().glob("*.json"), reverse=True):
             try:
                 scan = ScanResult.model_validate_json(scan_file.read_text())
                 scans.append(
@@ -296,8 +296,8 @@ def dashboard_scans(request: Request):
         return redirect
 
     scans = []
-    if _storage.SCANS_DIR.exists():
-        for scan_file in sorted(_storage.SCANS_DIR.glob("*.json"), reverse=True):
+    if _storage._scans_dir().exists():
+        for scan_file in sorted(_storage._scans_dir().glob("*.json"), reverse=True):
             try:
                 scan = ScanResult.model_validate_json(scan_file.read_text())
                 scans.append(
