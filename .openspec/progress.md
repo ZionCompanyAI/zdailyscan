@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #100)
+- TASK-100: fix(scraper) — CrawlerRunConfig cookies kwarg removido — arquivado 2026-06-01
+
 ## Concluído (issue #98)
 - TASK-098: fix(scraper) — crawl4ai chamado mesmo sem cookies — arquivado 2026-06-01
 
