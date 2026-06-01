@@ -91,6 +91,7 @@ def _make_market() -> BRMarket:
 async def test_run_daily_scan_no_attributeerror_with_real_aliproduct(monkeypatch):
     """run_daily_scan must complete without AttributeError using real AliProduct instances."""
     monkeypatch.setattr("app.pipeline.CATEGORIES", ["200003655"])
+    monkeypatch.setattr("app.pipeline.get_active_keywords", lambda: [])
 
     real_products = [_make_ali_product(i) for i in range(3)]
 
