@@ -50,7 +50,6 @@ async def _scrape_with_crawl4ai(
     browser_config = BrowserConfig(
         headless=True,
         user_agent_mode="random",
-        user_agent_generator_config={"device_type": "desktop", "os_type": "windows"},
     )
     strategy = JsonCssExtractionStrategy(_PRODUCT_SCHEMA)
 
