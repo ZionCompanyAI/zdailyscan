@@ -48,14 +48,7 @@ async def _scrape_with_crawl4ai(
     browser_config = BrowserConfig(headless=True)
     strategy = JsonCssExtractionStrategy(_PRODUCT_SCHEMA)
 
-    cookies: list[dict] | None = None
-    if session_cookies:
-        try:
-            cookies = _json.loads(session_cookies)
-        except _json.JSONDecodeError:
-            pass
-
-    run_config = CrawlerRunConfig(extraction_strategy=strategy, cookies=cookies)
+    run_config = CrawlerRunConfig(extraction_strategy=strategy)
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         result = await crawler.arun(url=url, config=run_config)
