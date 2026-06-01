@@ -183,27 +183,37 @@ tbody td { padding: 0.65rem 0.75rem; color: var(--color-text); }
     <span id="scan-status" data-scan-id=""></span>
   </form>
   <script>
+    function startPolling(scanId) {
+      var statusEl = document.getElementById('scan-status');
+      statusEl.dataset.scanId = scanId;
+      statusEl.textContent = 'Scan em andamento…';
+      var poll = setInterval(function() {
+        fetch('/dashboard/scan/' + scanId + '/status')
+          .then(function(r) { return r.json(); })
+          .then(function(s) {
+            statusEl.textContent = 'Status: ' + s.status;
+            if (s.status !== 'running') {
+              clearInterval(poll);
+              sessionStorage.removeItem('active_scan_id');
+              if (s.status === 'completed') location.reload();
+            }
+          });
+      }, 2000);
+    }
+
+    (function() {
+      var id = sessionStorage.getItem('active_scan_id');
+      if (id) startPolling(id);
+    })();
+
     document.querySelector('form.trigger-card').addEventListener('submit', function(e) {
       e.preventDefault();
       var form = this;
       fetch(form.action, { method: 'POST', body: new FormData(form) })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          var scanId = data.scan_id;
-          var statusEl = document.getElementById('scan-status');
-          statusEl.dataset.scanId = scanId;
-          statusEl.textContent = 'Scan iniciado…';
-          var poll = setInterval(function() {
-            fetch('/dashboard/scan/' + scanId + '/status')
-              .then(function(r) { return r.json(); })
-              .then(function(s) {
-                statusEl.textContent = 'Status: ' + s.status;
-                if (s.status === 'completed' || s.status === 'failed') {
-                  clearInterval(poll);
-                  if (s.status === 'completed') location.reload();
-                }
-              });
-          }, 2000);
+          sessionStorage.setItem('active_scan_id', data.scan_id);
+          startPolling(data.scan_id);
         });
     });
   </script>
