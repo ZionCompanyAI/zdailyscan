@@ -65,27 +65,43 @@ def _mock_httpx_client(*responses: str):
 # ── tests ──────────────────────────────────────────────────────────────────────
 
 
-async def test_default_scraper_mode_is_http():
-    """Sem SCRAPER_MODE definido, o default deve ser 'http' (não crawl4ai)."""
+async def test_default_scraper_mode_is_firecrawl():
+    """Sem SCRAPER_MODE definido, o default deve ser 'firecrawl'."""
     env = {k: v for k, v in os.environ.items() if k != "SCRAPER_MODE"}
     with patch.dict(os.environ, env, clear=True):
         with patch(
-            "app.scrapers.aliexpress._scrape_with_http",
+            "app.scrapers.aliexpress._scrape_with_firecrawl",
             new_callable=AsyncMock,
             return_value=[],
-        ) as mock_http:
+        ) as mock_fc:
             with patch(
-                "app.scrapers.aliexpress._scrape_with_crawl4ai",
+                "app.scrapers.aliexpress._scrape_with_http",
                 new_callable=AsyncMock,
                 return_value=[],
-            ) as mock_crawl:
+            ) as mock_http:
                 await get_hot_products("200003655")
 
-    mock_http.assert_called_once(), "SCRAPER_MODE default deve chamar _scrape_with_http"
-    # crawl4ai pode ser chamado como fallback se http retornar []
-    # mas _scrape_with_http deve ser chamado primeiro
-    http_call_index = mock_http.call_args_list[0] if mock_http.called else None
-    assert http_call_index is not None
+    mock_fc.assert_called_once(), "SCRAPER_MODE default deve chamar _scrape_with_firecrawl"
+    mock_http.assert_not_called()
+
+
+async def test_firecrawl_mode_calls_scrape_with_firecrawl():
+    """SCRAPER_MODE=firecrawl deve chamar _scrape_with_firecrawl."""
+    with patch.dict(os.environ, {"SCRAPER_MODE": "firecrawl"}):
+        with patch(
+            "app.scrapers.aliexpress._scrape_with_firecrawl",
+            new_callable=AsyncMock,
+            return_value=[],
+        ) as mock_fc:
+            with patch(
+                "app.scrapers.aliexpress._scrape_with_http",
+                new_callable=AsyncMock,
+                return_value=[],
+            ) as mock_http:
+                await get_hot_products("200003655")
+
+    mock_fc.assert_called_once()
+    mock_http.assert_not_called()
 
 
 async def test_http_mode_calls_scrape_with_http():
@@ -248,6 +264,108 @@ async def test_parse_fn_json_image_url_adds_https():
     }
     results = _parse_fn_json(data, "200003655", 10)
     assert results[0].image_url == "https://ae01.alicdn.com/img.jpg"
+
+
+_FIRECRAWL_RESPONSE = {
+    "data": {
+        "extract": [
+            {
+                "product_id": "9001",
+                "title": "Wireless Mouse",
+                "price_usd": 8.99,
+                "sale_count_30d": 1500,
+                "rating": 4.6,
+                "image_url": "https://ae01.alicdn.com/mouse.jpg",
+                "product_url": "https://www.aliexpress.com/item/9001.html",
+            }
+        ]
+    }
+}
+
+
+async def test_firecrawl_parses_response_into_products():
+    """_scrape_with_firecrawl deve parsear resposta JSON da API e retornar AliProduct list."""
+    mock_resp = MagicMock()
+    mock_resp.json = MagicMock(return_value=_FIRECRAWL_RESPONSE)
+    mock_resp.raise_for_status = MagicMock()
+
+    mock_client = MagicMock()
+    mock_client.post = AsyncMock(return_value=mock_resp)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        from app.scrapers.aliexpress import _scrape_with_firecrawl
+        results = await _scrape_with_firecrawl("200003655", 100)
+
+    assert len(results) == 1
+    assert results[0].product_id == "9001"
+    assert results[0].title == "Wireless Mouse"
+    assert results[0].price_usd == pytest.approx(8.99)
+    assert results[0].sale_count_30d == 1500
+    assert results[0].rating == pytest.approx(4.6)
+    assert results[0].category_id == "200003655"
+
+
+async def test_firecrawl_uses_api_key_as_bearer_token():
+    """FIRECRAWL_API_KEY deve ser enviado como Authorization: Bearer no header."""
+    mock_resp = MagicMock()
+    mock_resp.json = MagicMock(return_value={"data": {"extract": []}})
+    mock_resp.raise_for_status = MagicMock()
+
+    mock_client = MagicMock()
+    mock_client.post = AsyncMock(return_value=mock_resp)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch.dict(os.environ, {"FIRECRAWL_API_KEY": "fc-test-key-abc"}):
+        with patch("httpx.AsyncClient", return_value=mock_client):
+            from app.scrapers.aliexpress import _scrape_with_firecrawl
+            await _scrape_with_firecrawl("200003655", 100)
+
+    call_kwargs = mock_client.post.call_args
+    headers = call_kwargs.kwargs.get("headers", {})
+    assert headers.get("Authorization") == "Bearer fc-test-key-abc"
+
+
+async def test_firecrawl_returns_empty_on_api_error():
+    """Erro na API Firecrawl deve retornar [] sem propagar exceção."""
+    mock_client = MagicMock()
+    mock_client.post = AsyncMock(side_effect=Exception("connection refused"))
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        from app.scrapers.aliexpress import _scrape_with_firecrawl
+        results = await _scrape_with_firecrawl("200003655", 100)
+
+    assert results == []
+
+
+async def test_firecrawl_max_results_respected():
+    """_scrape_with_firecrawl deve respeitar max_results."""
+    two_product_response = {
+        "data": {
+            "extract": [
+                {"product_id": "1", "title": "A", "price_usd": 1.0, "sale_count_30d": 10, "rating": 4.0, "image_url": "", "product_url": ""},
+                {"product_id": "2", "title": "B", "price_usd": 2.0, "sale_count_30d": 20, "rating": 4.5, "image_url": "", "product_url": ""},
+            ]
+        }
+    }
+    mock_resp = MagicMock()
+    mock_resp.json = MagicMock(return_value=two_product_response)
+    mock_resp.raise_for_status = MagicMock()
+
+    mock_client = MagicMock()
+    mock_client.post = AsyncMock(return_value=mock_resp)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        from app.scrapers.aliexpress import _scrape_with_firecrawl
+        results = await _scrape_with_firecrawl("200003655", max_results=1)
+
+    assert len(results) == 1
 
 
 async def test_http_mode_fallback_to_crawl4ai_when_empty():

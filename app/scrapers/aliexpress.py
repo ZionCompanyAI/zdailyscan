@@ -254,10 +254,99 @@ async def _scrape_with_http(
     return await _fetch("https://m.aliexpress.com/fn/search-pc/index")
 
 
+async def _scrape_with_firecrawl(
+    category_id: str, max_results: int, session_cookies: str = ""
+) -> list[AliProduct]:
+    import httpx
+
+    api_key = os.environ.get("FIRECRAWL_API_KEY", "")
+    firecrawl_url = os.environ.get("FIRECRAWL_URL", "https://api.firecrawl.dev")
+    url_to_scrape = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
+
+    headers = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    body_headers: dict[str, str] = {}
+    if session_cookies:
+        try:
+            raw_cookies = _json.loads(session_cookies)
+            cookie_str = "; ".join(
+                f"{c['name']}={c['value']}" for c in raw_cookies if c.get("value")
+            )
+            if cookie_str:
+                body_headers["Cookie"] = cookie_str
+        except Exception:
+            pass
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                firecrawl_url.rstrip("/") + "/v1/scrape",
+                headers=headers,
+                json={
+                    "url": url_to_scrape,
+                    "headers": body_headers,
+                    "timeout": 150000,
+                    "formats": ["extract"],
+                    "extract": {
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "product_id": {"type": "string"},
+                                    "title": {"type": "string"},
+                                    "price_usd": {"type": "number"},
+                                    "sale_count_30d": {"type": "integer"},
+                                    "rating": {"type": "number"},
+                                    "image_url": {"type": "string"},
+                                    "product_url": {"type": "string"},
+                                },
+                            },
+                        }
+                    },
+                },
+                timeout=180.0,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as exc:
+        logger.warning("[scraper:firecrawl] category=%s failed: %s", category_id, exc)
+        return []
+
+    payload = data.get("data") or {}
+    if isinstance(payload, list):
+        raw: list[dict] = payload
+    else:
+        raw = payload.get("extract") or []
+
+    products: list[AliProduct] = []
+    for item in raw[:max_results]:
+        try:
+            products.append(
+                AliProduct(
+                    product_id=str(item.get("product_id") or ""),
+                    title=str(item.get("title") or ""),
+                    price_usd=float(item.get("price_usd") or 0),
+                    sale_count_30d=int(item.get("sale_count_30d") or 0),
+                    rating=float(item.get("rating") or 0),
+                    image_url=str(item.get("image_url") or ""),
+                    product_url=str(item.get("product_url") or ""),
+                    category_id=category_id,
+                )
+            )
+        except (ValueError, TypeError):
+            continue
+
+    logger.info("[scraper:firecrawl] category=%s extracted=%d", category_id, len(products))
+    return products
+
+
 async def get_hot_products(
     category_id: str, min_rating: float = 0.0, max_results: int = 100
 ) -> list[AliProduct]:
-    mode = os.environ.get("SCRAPER_MODE", "http")
+    mode = os.environ.get("SCRAPER_MODE", "firecrawl")
     session_cookies = os.environ.get("ALIEXPRESS_SESSION_COOKIES", "")
 
     if mode == "mock":
@@ -265,7 +354,9 @@ async def get_hot_products(
 
         return get_mock_products(category_id, min_rating, max_results)
 
-    if mode in ("crawl4ai", "firecrawl"):
+    if mode == "firecrawl":
+        products = await _scrape_with_firecrawl(category_id, max_results, session_cookies)
+    elif mode == "crawl4ai":
         products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
     else:
         products = await _scrape_with_http(category_id, max_results, session_cookies)

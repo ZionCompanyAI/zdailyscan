@@ -18,7 +18,8 @@ def test_get_hot_products_default_min_rating_is_zero():
 
 
 async def test_zero_rating_products_not_filtered_by_default():
-    """Without explicit min_rating, products with rating=0.0 from crawl4ai must survive."""
+    """Without explicit min_rating, products with rating=0.0 must survive."""
+    import os
     zero_rating_product = AliProduct(
         product_id="z1",
         title="Crawl4AI Product No Rating",
@@ -29,12 +30,13 @@ async def test_zero_rating_products_not_filtered_by_default():
         product_url="https://www.aliexpress.com/item/z1.html",
         category_id="200000783",
     )
-    with patch(
-        "app.scrapers.aliexpress._scrape_with_crawl4ai",
-        new_callable=AsyncMock,
-        return_value=[zero_rating_product],
-    ):
-        results = await get_hot_products("200000783")
+    with patch.dict(os.environ, {"SCRAPER_MODE": "crawl4ai"}):
+        with patch(
+            "app.scrapers.aliexpress._scrape_with_crawl4ai",
+            new_callable=AsyncMock,
+            return_value=[zero_rating_product],
+        ):
+            results = await get_hot_products("200000783")
     assert len(results) == 1, (
         "Products with rating=0.0 must not be filtered when min_rating uses its default value"
     )

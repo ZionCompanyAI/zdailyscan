@@ -23,18 +23,18 @@ def test_get_hot_products_default_min_rating_is_zero():
     assert default == 0.0, f"Expected min_rating default=0.0, got {default}"
 
 
-async def test_scraper_mode_firecrawl_usa_crawl4ai():
-    """SCRAPER_MODE=firecrawl agora usa crawl4ai — Firecrawl bloqueado pelo AliExpress (issue #115)."""
-    env = {"SCRAPER_MODE": "firecrawl", "FIRECRAWL_URL": "http://firecrawl.test"}
+async def test_scraper_mode_firecrawl_usa_scrape_with_firecrawl():
+    """SCRAPER_MODE=firecrawl chama _scrape_with_firecrawl (issue #126)."""
+    env = {"SCRAPER_MODE": "firecrawl", "FIRECRAWL_API_KEY": "fc-test"}
     with patch.dict(os.environ, env):
         with patch(
-            "app.scrapers.aliexpress._scrape_with_crawl4ai",
+            "app.scrapers.aliexpress._scrape_with_firecrawl",
             new_callable=AsyncMock,
             return_value=[],
-        ) as mock_c4a:
+        ) as mock_fc:
             await get_hot_products("200000783")
 
-    mock_c4a.assert_called_once()
+    mock_fc.assert_called_once()
 
 
 async def test_get_hot_products_default_inclui_produtos_baixo_rating():

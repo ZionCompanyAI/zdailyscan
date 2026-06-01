@@ -1,6 +1,7 @@
-"""Issue #115 — Firecrawl removido do fluxo de get_hot_products.
+"""Issue #115 — verificações residuais de isolamento de modo.
 
-AliExpress bloqueia Firecrawl (408). crawl4ai deve ser sempre o scraper ativo.
+Issue #126 reintroduziu Firecrawl como modo padrão. Os testes abaixo cobrem
+apenas os modos crawl4ai e http, cujo comportamento não foi alterado.
 """
 import os
 from unittest.mock import AsyncMock, patch
@@ -18,25 +19,6 @@ _CRAWL_PRODUCT = AliProduct(
     product_url="https://www.aliexpress.com/item/crawl115.html",
     category_id="200003655",
 )
-
-
-async def test_firecrawl_mode_always_uses_crawl4ai():
-    """SCRAPER_MODE=firecrawl com FIRECRAWL_URL setado → crawl4ai é chamado, não Firecrawl."""
-    env = {
-        "SCRAPER_MODE": "firecrawl",
-        "FIRECRAWL_URL": "https://api.firecrawl.dev",
-    }
-    with patch.dict(os.environ, env):
-        with patch(
-            "app.scrapers.aliexpress._scrape_with_crawl4ai",
-            new_callable=AsyncMock,
-            return_value=[_CRAWL_PRODUCT],
-        ) as mock_crawl:
-            results = await get_hot_products("200003655")
-
-    mock_crawl.assert_called_once()
-    assert len(results) == 1
-    assert results[0].product_id == "crawl115"
 
 
 async def test_crawl4ai_empty_never_falls_back_to_firecrawl():
