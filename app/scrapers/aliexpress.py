@@ -255,13 +255,17 @@ async def _scrape_with_http(
 
 
 async def _scrape_with_firecrawl(
-    category_id: str, max_results: int, session_cookies: str = ""
+    category_id: str, max_results: int, session_cookies: str = "", keyword: str = ""
 ) -> list[AliProduct]:
     import httpx
+    import urllib.parse
 
     api_key = os.environ.get("FIRECRAWL_API_KEY", "")
     firecrawl_url = os.environ.get("FIRECRAWL_URL", "https://api.firecrawl.dev")
-    url_to_scrape = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
+    if keyword:
+        url_to_scrape = f"https://www.aliexpress.com/wholesale?SearchText={urllib.parse.quote_plus(keyword)}&SortType=total_tranpro_desc"
+    else:
+        url_to_scrape = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
 
     headers = {}
     if api_key:
@@ -344,7 +348,7 @@ async def _scrape_with_firecrawl(
 
 
 async def get_hot_products(
-    category_id: str, min_rating: float = 0.0, max_results: int = 100
+    category_id: str, min_rating: float = 0.0, max_results: int = 100, keyword: str = ""
 ) -> list[AliProduct]:
     mode = os.environ.get("SCRAPER_MODE", "firecrawl")
     session_cookies = os.environ.get("ALIEXPRESS_SESSION_COOKIES", "")
@@ -355,7 +359,7 @@ async def get_hot_products(
         return get_mock_products(category_id, min_rating, max_results)
 
     if mode == "firecrawl":
-        products = await _scrape_with_firecrawl(category_id, max_results, session_cookies)
+        products = await _scrape_with_firecrawl(category_id, max_results, session_cookies, keyword=keyword)
     elif mode == "crawl4ai":
         products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
     else:

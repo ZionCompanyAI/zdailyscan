@@ -38,6 +38,7 @@ def _cost() -> ImportCost:
 async def test_pipeline_returns_top20(monkeypatch):
     """run_daily_scan retorna no máximo 20 produtos viáveis."""
     monkeypatch.setattr("app.pipeline.CATEGORIES", ["cat1", "cat2"])
+    monkeypatch.setattr("app.pipeline.get_active_keywords", lambda: [])
 
     with (
         patch("app.pipeline.get_hot_products", AsyncMock(return_value=_ali_products(15))),
