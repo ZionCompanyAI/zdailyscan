@@ -25,7 +25,7 @@ class ProductScore(BaseModel):
     import_cost_brl: float = 0.0
 
 
-def score_product(ali: AliProduct, market: BRMarket, cost: ImportCost) -> ProductScore:
+def score_product(ali: AliProduct, market: BRMarket, cost: ImportCost, trend_score: float = 0.5) -> ProductScore:
     avg_price = market.avg_price_brl or 0.0
 
     if avg_price > 0:
@@ -35,7 +35,7 @@ def score_product(ali: AliProduct, market: BRMarket, cost: ImportCost) -> Produc
 
     score_demanda_br = min(market.result_count / 100, 1.0)
     score_oportunidade = 1.0 - min(market.result_count / 500, 1.0)
-    score_tendencia = 0.5
+    score_tendencia = trend_score
 
     if cost.price_usd <= 50:
         score_logistica = 1.0
