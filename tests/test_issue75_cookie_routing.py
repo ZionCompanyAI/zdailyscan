@@ -79,8 +79,8 @@ async def test_cookies_set_crawl4ai_empty_falls_back_to_firecrawl():
     assert results[0].product_id == "f001"
 
 
-async def test_no_cookies_uses_firecrawl_directly():
-    """Without ALIEXPRESS_SESSION_COOKIES, crawl4ai is never called; firecrawl runs directly."""
+async def test_no_cookies_crawl4ai_called_falls_back_to_firecrawl():
+    """Issue #98 fix: Without cookies, crawl4ai is called first; Firecrawl used as fallback when empty."""
     env = {
         "SCRAPER_MODE": "crawl4ai",
         "FIRECRAWL_URL": "http://firecrawl:3002",
@@ -90,7 +90,7 @@ async def test_no_cookies_uses_firecrawl_directly():
         with patch(
             "app.scrapers.aliexpress._scrape_with_crawl4ai",
             new_callable=AsyncMock,
-            return_value=[_COOKIE_PRODUCT],
+            return_value=[],
         ) as mock_crawl:
             with patch(
                 "app.scrapers.aliexpress.get_products_via_firecrawl",
@@ -99,13 +99,13 @@ async def test_no_cookies_uses_firecrawl_directly():
             ) as mock_fire:
                 results = await get_hot_products("200000783", min_rating=0.0)
 
-    mock_crawl.assert_not_called()
+    mock_crawl.assert_called_once()
     mock_fire.assert_called_once()
     assert results[0].product_id == "f001"
 
 
 async def test_no_cookies_no_firecrawl_url_returns_empty():
-    """Without cookies and without FIRECRAWL_URL, returns [] without crashing."""
+    """Without cookies and without FIRECRAWL_URL, crawl4ai is tried and returns []."""
     env = {
         "SCRAPER_MODE": "crawl4ai",
         "FIRECRAWL_URL": "",
@@ -115,8 +115,9 @@ async def test_no_cookies_no_firecrawl_url_returns_empty():
         with patch(
             "app.scrapers.aliexpress._scrape_with_crawl4ai",
             new_callable=AsyncMock,
+            return_value=[],
         ) as mock_crawl:
             results = await get_hot_products("200000783", min_rating=0.0)
 
-    mock_crawl.assert_not_called()
+    mock_crawl.assert_called_once()
     assert results == []
