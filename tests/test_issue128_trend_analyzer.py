@@ -1,5 +1,4 @@
 """Tests for TASK-128: trend_analyzer — 1688.com + Google Trends BR."""
-import asyncio
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
