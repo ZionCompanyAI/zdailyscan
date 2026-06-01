@@ -117,17 +117,10 @@ async def get_hot_products(
 
         return get_mock_products(category_id, min_rating, max_results)
 
-    if session_cookies:
-        # cookies present: crawl4ai supports injection; firecrawl is the fallback
-        products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
-        if not products and firecrawl_url:
-            products = await get_products_via_firecrawl(category_id, firecrawl_url, max_results)
-    else:
-        # no cookies: public listings only; use firecrawl directly
-        if firecrawl_url:
-            products = await get_products_via_firecrawl(category_id, firecrawl_url, max_results)
-        else:
-            products = []
+    # crawl4ai works headlessly without cookies — always try it first
+    products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
+    if not products and firecrawl_url:
+        products = await get_products_via_firecrawl(category_id, firecrawl_url, max_results)
 
     filtered = [p for p in products if p.rating >= min_rating]
     return filtered[:max_results]

@@ -31,15 +31,20 @@ async def test_firecrawl_zero_rating_products_not_filtered_by_default():
         category_id="200000783",
     )
     with patch(
-        "app.scrapers.aliexpress.get_products_via_firecrawl",
+        "app.scrapers.aliexpress._scrape_with_crawl4ai",
         new_callable=AsyncMock,
-        return_value=[zero_rating_product],
+        return_value=[],
     ):
-        env = {"FIRECRAWL_URL": "http://mock-firecrawl"}
-        env.pop("ALIEXPRESS_SESSION_COOKIES", None)
-        with patch.dict(os.environ, env, clear=False):
-            os.environ.pop("ALIEXPRESS_SESSION_COOKIES", None)
-            results = await get_hot_products("200000783")
+        with patch(
+            "app.scrapers.aliexpress.get_products_via_firecrawl",
+            new_callable=AsyncMock,
+            return_value=[zero_rating_product],
+        ):
+            env = {"FIRECRAWL_URL": "http://mock-firecrawl"}
+            env.pop("ALIEXPRESS_SESSION_COOKIES", None)
+            with patch.dict(os.environ, env, clear=False):
+                os.environ.pop("ALIEXPRESS_SESSION_COOKIES", None)
+                results = await get_hot_products("200000783")
     assert len(results) == 1, (
         "Products with rating=0.0 from Firecrawl must not be filtered when "
         "min_rating uses its default value"
