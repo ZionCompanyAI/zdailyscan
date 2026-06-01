@@ -44,6 +44,7 @@ async def test_pipeline_returns_top20(monkeypatch):
         patch("app.pipeline.get_hot_products", AsyncMock(return_value=_ali_products(15))),
         patch("app.pipeline.search_br_market", AsyncMock(return_value=_market())),
         patch("app.pipeline.calculate_import_cost", return_value=_cost()),
+        patch("app.pipeline.compute_trend_score", return_value=0.5),
     ):
         from app.pipeline import run_daily_scan, ScanResult
 
@@ -69,6 +70,7 @@ async def test_results_sorted_by_score(monkeypatch):
         patch("app.pipeline.get_hot_products", AsyncMock(return_value=_ali_products(3))),
         patch("app.pipeline.search_br_market", AsyncMock(side_effect=markets)),
         patch("app.pipeline.calculate_import_cost", return_value=_cost()),
+        patch("app.pipeline.compute_trend_score", return_value=0.5),
     ):
         from app.pipeline import run_daily_scan
 
@@ -88,6 +90,7 @@ async def test_scan_persisted_to_json(tmp_path, monkeypatch):
         patch("app.pipeline.get_hot_products", AsyncMock(return_value=_ali_products(2))),
         patch("app.pipeline.search_br_market", AsyncMock(return_value=_market())),
         patch("app.pipeline.calculate_import_cost", return_value=_cost()),
+        patch("app.pipeline.compute_trend_score", return_value=0.5),
     ):
         from app.pipeline import run_daily_scan
         from app.storage import save_scan
