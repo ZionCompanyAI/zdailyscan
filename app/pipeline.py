@@ -20,6 +20,13 @@ CATEGORIES: list[str] = [
     "200000783",  # Computer & Office
 ]
 
+DEFAULT_KEYWORDS = "USB-C adapter,USB hub multiport,HDMI adapter,wireless charger,phone stand,laptop stand,bluetooth earphones,Thunderbolt hub,screen protector,power bank"
+
+
+def get_active_keywords() -> list[str]:
+    raw = os.getenv("SCAN_KEYWORDS", DEFAULT_KEYWORDS)
+    return [k.strip() for k in raw.split(",") if k.strip()]
+
 
 def get_active_categories() -> list[str]:
     """Return active category IDs from SCAN_CATEGORIES env var, or all defaults."""
@@ -29,14 +36,6 @@ def get_active_categories() -> list[str]:
     valid = set(CATEGORIES)
     filtered = [c.strip() for c in raw.split(",") if c.strip() in valid]
     return filtered if filtered else CATEGORIES
-
-
-DEFAULT_KEYWORDS = "USB-C adapter,USB hub multiport,HDMI adapter,wireless charger,phone stand,laptop stand,bluetooth earphones,Thunderbolt hub,screen protector,power bank"
-
-
-def get_active_keywords() -> list[str]:
-    raw = os.getenv("SCAN_KEYWORDS", DEFAULT_KEYWORDS)
-    return [k.strip() for k in raw.split(",") if k.strip()]
 
 
 class ScanResult(BaseModel):
@@ -56,11 +55,15 @@ async def run_daily_scan(
     today = date.today().isoformat()
     all_scores: list[ProductScore] = []
 
-    for keyword in get_active_keywords():
+    scan_targets: list[tuple[str, str]] = [
+        (cat_id, "") for cat_id in (categories or get_active_categories())
+    ] + [("", kw) for kw in get_active_keywords()]
+
+    for category_id, keyword in scan_targets:
         try:
-            products = await get_hot_products(category_id="", keyword=keyword, max_results=10)
+            products = await get_hot_products(category_id, keyword=keyword, max_results=10 if keyword else 100)
         except Exception as exc:
-            logger.warning("scraper failed for keyword %s: %r", keyword, exc)
+            logger.warning("scraper failed for category=%s keyword=%r: %r", category_id, keyword, exc)
             continue
         for product in products:
             try:

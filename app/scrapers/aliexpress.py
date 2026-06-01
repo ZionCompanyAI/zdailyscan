@@ -258,11 +258,11 @@ async def _scrape_with_firecrawl(
     category_id: str, max_results: int, session_cookies: str = "", keyword: str = ""
 ) -> list[AliProduct]:
     import httpx
+    import urllib.parse
 
     api_key = os.environ.get("FIRECRAWL_API_KEY", "")
     firecrawl_url = os.environ.get("FIRECRAWL_URL", "https://api.firecrawl.dev")
     if keyword:
-        import urllib.parse
         url_to_scrape = f"https://www.aliexpress.com/wholesale?SearchText={urllib.parse.quote_plus(keyword)}&SortType=total_tranpro_desc"
     else:
         url_to_scrape = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
