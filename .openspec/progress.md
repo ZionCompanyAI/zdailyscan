@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #141)
+- TASK-141: fix(scrapling) — extrair produtos via JSON _init_data_ (Fetcher.get + regex) em vez de CSS selectors + StealthyFetcher; _find_product_list() recursivo — arquivado 2026-06-01
+
 ## Concluído (issue #139)
 - TASK-139: feat(scraper) — SCRAPER_MODE=scrapling com StealthyFetcher (HTTP puro, sem custos) + fallback automático firecrawl→scrapling em caso de 402 — arquivado 2026-06-01
 
