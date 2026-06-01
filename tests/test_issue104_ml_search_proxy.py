@@ -190,6 +190,8 @@ async def test_no_proxy_uses_direct_ml_url():
         with patch.dict("os.environ", {}, clear=False):
             import os
             os.environ.pop("ML_SEARCH_PROXY_URL", None)
+            os.environ.pop("AUTH_BUS_URL", None)
+            os.environ.pop("AUTH_BUS_API_KEY", None)
             result = await search_br_market("notebook")
 
     assert result.found is True
