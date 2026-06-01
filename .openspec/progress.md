@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #96)
+- TASK-096: feat(ml) — auth-bus integration para renovação automática do ML_USER_ACCESS_TOKEN — arquivado 2026-05-31
+
 ## Concluído (issue #91)
 - TASK-091: fix(scraper) — Firecrawl httpx timeout 60→180s, body timeout 150000ms, %r logger — arquivado 2026-05-31
 
