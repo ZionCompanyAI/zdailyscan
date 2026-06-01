@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #98)
+- TASK-098: fix(scraper) — crawl4ai chamado mesmo sem cookies — arquivado 2026-06-01
+
 ## Concluído (issue #91)
 - TASK-091: fix(scraper) — Firecrawl httpx timeout 60→180s, body timeout 150000ms, %r logger — arquivado 2026-05-31
 
