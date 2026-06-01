@@ -1,12 +1,17 @@
-"""Regression tests — gaps que deixaram #81/#82 passarem no CI.
+"""Regression tests — gaps que deixaram #81/#82/#100 passarem no CI.
 
 Gap 1: default min_rating não verificado em test_scraper.py
 Gap 2: SCRAPER_MODE=firecrawl nunca testado como modo primário
 Gap 3: pipeline mockava get_hot_products por completo, defaults nunca exercitados
+Gap 4 (issue #100): CrawlerRunConfig não aceita mais cookies= kwarg
 """
 import inspect
 import os
-from unittest.mock import AsyncMock, patch
+import sys
+from types import ModuleType
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from app.scrapers.aliexpress import get_hot_products
 
@@ -45,3 +50,45 @@ async def test_get_hot_products_default_inclui_produtos_baixo_rating():
     assert any(r < 4.9 for r in ratings), (
         "Expected products with rating < 4.9 to be included when min_rating uses its default"
     )
+
+
+@pytest.mark.asyncio
+async def test_crawl4ai_no_cookies_kwarg_in_run_config():
+    """_scrape_with_crawl4ai não deve passar cookies= para CrawlerRunConfig (issue #100).
+
+    Usa um stub de CrawlerRunConfig que levanta TypeError se receber cookies=,
+    replicando o comportamento da versão instalada do crawl4ai.
+    """
+    from app.scrapers.aliexpress import _scrape_with_crawl4ai
+
+    def strict_run_config(*args, **kwargs):
+        if "cookies" in kwargs:
+            raise TypeError(
+                "CrawlerRunConfig.__init__() got an unexpected keyword argument 'cookies'"
+            )
+        return MagicMock()
+
+    mock_result = MagicMock()
+    mock_result.extracted_content = "[]"
+    mock_crawler = AsyncMock()
+    mock_crawler.arun = AsyncMock(return_value=mock_result)
+    mock_crawler.__aenter__ = AsyncMock(return_value=mock_crawler)
+    mock_crawler.__aexit__ = AsyncMock(return_value=None)
+
+    fake_crawl4ai = ModuleType("crawl4ai")
+    fake_crawl4ai.BrowserConfig = MagicMock(return_value=MagicMock())
+    fake_crawl4ai.CrawlerRunConfig = strict_run_config
+    fake_crawl4ai.AsyncWebCrawler = MagicMock(return_value=mock_crawler)
+
+    fake_extraction = ModuleType("crawl4ai.extraction_strategy")
+    fake_extraction.JsonCssExtractionStrategy = MagicMock(return_value=MagicMock())
+
+    with patch.dict(sys.modules, {
+        "crawl4ai": fake_crawl4ai,
+        "crawl4ai.extraction_strategy": fake_extraction,
+    }):
+        result = await _scrape_with_crawl4ai(
+            "200000783", 10, '[{"name":"x","value":"y"}]'
+        )
+
+    assert isinstance(result, list)
