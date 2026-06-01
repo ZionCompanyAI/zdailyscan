@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #107)
+- TASK-107: fix(storage) — _scans_dir() lê DATA_DIR env var; elimina SCANS_DIR hardcoded; dashboard.py + 3 test files atualizados — arquivado 2026-06-01
+
 ## Concluído (issue #126)
 - TASK-126: fix(scraper) — _scrape_with_http() via httpx JSON API, SCRAPER_MODE default http, crawl4ai fallback — arquivado 2026-06-01
 
