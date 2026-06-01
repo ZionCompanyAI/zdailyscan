@@ -315,8 +315,13 @@ async def _scrape_with_firecrawl(
             )
             resp.raise_for_status()
             data = resp.json()
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 402:
+            raise  # dispatcher handles 402 → scrapling fallback
+        logger.warning("[scraper:firecrawl] category=%s failed: %r", category_id, exc)
+        return []
     except Exception as exc:
-        logger.warning("[scraper:firecrawl] category=%s failed: %s", category_id, exc)
+        logger.warning("[scraper:firecrawl] category=%s failed: %r", category_id, exc)
         return []
 
     payload = data.get("data") or {}
@@ -347,6 +352,75 @@ async def _scrape_with_firecrawl(
     return products
 
 
+async def _scrape_with_scrapling(
+    category_id: str, max_results: int, keyword: str = ""
+) -> list[AliProduct]:
+    import asyncio
+    import re
+    import urllib.parse
+
+    if keyword:
+        url = f"https://www.aliexpress.com/wholesale?SearchText={urllib.parse.quote_plus(keyword)}&SortType=total_tranpro_desc"
+    else:
+        url = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
+
+    def _fetch():
+        from scrapling.fetchers import StealthyFetcher
+
+        return StealthyFetcher.fetch(url, headless=True, network_idle=True)
+
+    try:
+        page = await asyncio.to_thread(_fetch)
+    except Exception as exc:
+        logger.warning("[scraper:scrapling] category=%s keyword=%r failed: %r", category_id, keyword, exc)
+        return []
+
+    cards = page.css(".search-item-card-wrapper-gallery")
+    if not cards:
+        cards = page.css("[class*=search-item-card]")
+    if not cards:
+        logger.warning("[scraper:scrapling] category=%s no cards found", category_id)
+        return []
+
+    products: list[AliProduct] = []
+    for card in cards[:max_results]:
+        try:
+            title = card.css("[class*=item-title]::text").get(default="")
+            price_text = card.css("[class*=price]::text").get(default="0")
+            product_url = card.css("a::attr(href)").get(default="")
+            image_url = (
+                card.css("img::attr(src)").get(default="")
+                or card.css("img::attr(lazy-src)").get(default="")
+            )
+
+            if not title or not product_url:
+                continue
+
+            price = float(re.sub(r"[^0-9.]", "", price_text) or 0)
+            match = re.search(r"/(\d+)\.html", product_url)
+            if not match:
+                continue
+
+            product_id = match.group(1)
+            products.append(
+                AliProduct(
+                    product_id=product_id,
+                    title=title,
+                    price_usd=price,
+                    sale_count_30d=0,
+                    rating=0.0,
+                    image_url=image_url,
+                    product_url=product_url if product_url.startswith("http") else f"https:{product_url}",
+                    category_id=category_id,
+                )
+            )
+        except (ValueError, TypeError):
+            continue
+
+    logger.info("[scraper:scrapling] category=%s extracted=%d", category_id, len(products))
+    return products
+
+
 async def get_hot_products(
     category_id: str, min_rating: float = 0.0, max_results: int = 100, keyword: str = ""
 ) -> list[AliProduct]:
@@ -359,7 +433,22 @@ async def get_hot_products(
         return get_mock_products(category_id, min_rating, max_results)
 
     if mode == "firecrawl":
-        products = await _scrape_with_firecrawl(category_id, max_results, session_cookies, keyword=keyword)
+        try:
+            products = await _scrape_with_firecrawl(
+                category_id, max_results, session_cookies, keyword=keyword
+            )
+        except Exception as exc:
+            exc_str = str(exc)
+            if "402" in exc_str or "Payment" in exc_str:
+                logger.warning(
+                    "[scraper] Firecrawl sem créditos (402), fallback para scrapling"
+                )
+                products = await _scrape_with_scrapling(category_id, max_results, keyword=keyword)
+            else:
+                logger.warning("[scraper:firecrawl] unhandled error: %r", exc)
+                products = []
+    elif mode == "scrapling":
+        products = await _scrape_with_scrapling(category_id, max_results, keyword=keyword)
     elif mode == "crawl4ai":
         products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
     else:
