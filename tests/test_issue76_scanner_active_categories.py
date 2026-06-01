@@ -46,13 +46,13 @@ def test_scanner_only_active_category_is_checked(monkeypatch, tmp_path):
     assert 'value="200003655" checked' in body or 'value="200003655"  checked' in body
 
     # Inactive categories must NOT be checked
-    for inactive_id in ["100003070", "200000783", "200000828", "200000834"]:
+    for inactive_id in ["100003070", "200000783"]:
         # The inactive id appears in the form but without checked attribute adjacent to it
         assert f'value="{inactive_id}" checked' not in body
 
 
 def test_scanner_all_checked_when_no_scan_categories_set(monkeypatch, tmp_path):
-    """When SCAN_CATEGORIES is unset (default), all categories are active and checked."""
+    """When SCAN_CATEGORIES is unset (default), all 3 tech categories are active and checked."""
 
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     monkeypatch.delenv("SCAN_CATEGORIES", raising=False)
@@ -62,12 +62,12 @@ def test_scanner_all_checked_when_no_scan_categories_set(monkeypatch, tmp_path):
     assert resp.status_code == 200
     body = resp.text
 
-    for cat_id in ["200003655", "100003070", "200000783", "200000828", "200000834"]:
+    for cat_id in ["200003655", "100003070", "200000783"]:
         assert f'value="{cat_id}" checked' in body or f'value="{cat_id}"  checked' in body
 
 
 def test_scanner_empty_scan_categories_falls_back_to_all_checked(monkeypatch, tmp_path):
-    """When SCAN_CATEGORIES is empty string, get_active_categories falls back to all defaults."""
+    """When SCAN_CATEGORIES is empty string, get_active_categories falls back to all 3 tech defaults."""
 
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     monkeypatch.setenv("SCAN_CATEGORIES", "")
@@ -77,5 +77,5 @@ def test_scanner_empty_scan_categories_falls_back_to_all_checked(monkeypatch, tm
     assert resp.status_code == 200
     body = resp.text
 
-    for cat_id in ["200003655", "100003070", "200000783", "200000828", "200000834"]:
+    for cat_id in ["200003655", "100003070", "200000783"]:
         assert f'value="{cat_id}" checked' in body or f'value="{cat_id}"  checked' in body

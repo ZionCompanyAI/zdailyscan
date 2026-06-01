@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #129)
+- TASK-129: chore — remover categorias não-tech (Home & Garden 200000828, Sports 200000834) de CATEGORIES e CATEGORY_NAMES; 4 testes atualizados para 3 categorias — arquivado 2026-06-01
+
 ## Concluído (issue #107)
 - TASK-107: fix(storage) — _scans_dir() lê DATA_DIR env var; elimina SCANS_DIR hardcoded; dashboard.py + 3 test files atualizados — arquivado 2026-06-01
 
