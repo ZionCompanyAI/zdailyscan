@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #104)
+- TASK-104: fix(analyzer) — ML search proxiada via ML_SEARCH_PROXY_URL (PolicyAgent block) — arquivado 2026-06-01
+
 ## Concluído (issue #103)
 - TASK-103: fix(analyzer) — get_ml_token auth-bus dinâmico, fallback ML_USER_ACCESS_TOKEN — arquivado 2026-06-01
 
