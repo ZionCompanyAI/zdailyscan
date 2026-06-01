@@ -24,8 +24,6 @@ CATEGORY_NAMES: dict[str, str] = {
     "200003655": "Consumer Electronics",
     "100003070": "Phones & Telecom",
     "200000783": "Computer & Office",
-    "200000828": "Home & Garden",
-    "200000834": "Sports & Entertainment",
 }
 
 
