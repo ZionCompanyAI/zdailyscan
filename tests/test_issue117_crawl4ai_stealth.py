@@ -93,14 +93,14 @@ def test_crawler_run_config_has_magic_true():
     )
 
 
-def test_crawler_run_config_has_wait_for_selector():
-    """CrawlerRunConfig deve ter wait_for='css:[data-item-id]'."""
+def test_crawler_run_config_has_no_wait_for():
+    """wait_for removido em #122 — lançava RuntimeError após 45s sem catch."""
     with _fake_crawl4ai_ctx() as (mod, _, mock_rc):
         asyncio.run(mod._scrape_with_crawl4ai("200003655", 10))
 
     rc_kwargs = mock_rc.call_args.kwargs
-    assert rc_kwargs.get("wait_for") == "css:[data-item-id]", (
-        f"wait_for deve ser 'css:[data-item-id]', got {rc_kwargs.get('wait_for')!r}"
+    assert "wait_for" not in rc_kwargs, (
+        f"wait_for não deve estar presente em CrawlerRunConfig; kwargs: {list(rc_kwargs.keys())}"
     )
 
 

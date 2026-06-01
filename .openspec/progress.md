@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #122)
+- TASK-122: fix(scraper) — session_cookies injetado no BrowserConfig, wait_for removido, try/except no crawler — arquivado 2026-06-01
+
 ## Concluído (issue #115)
 - TASK-115: fix(scraper) — Firecrawl removido de get_hot_products; crawl4ai é sempre o scraper — arquivado 2026-06-01
 

@@ -47,22 +47,34 @@ async def _scrape_with_crawl4ai(
     from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 
     url = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
+
+    cookies: list[dict] = []
+    if session_cookies:
+        try:
+            cookies = _json.loads(session_cookies)
+        except Exception:
+            pass
+
     browser_config = BrowserConfig(
         headless=True,
         user_agent_mode="random",
+        cookies=cookies,
     )
     strategy = JsonCssExtractionStrategy(_PRODUCT_SCHEMA)
 
     run_config = CrawlerRunConfig(
         extraction_strategy=strategy,
         magic=True,
-        wait_for="css:[data-item-id]",
         page_timeout=45000,
         js_code="window.scrollTo(0, document.body.scrollHeight);",
     )
 
-    async with AsyncWebCrawler(config=browser_config) as crawler:
-        result = await crawler.arun(url=url, config=run_config)
+    try:
+        async with AsyncWebCrawler(config=browser_config) as crawler:
+            result = await crawler.arun(url=url, config=run_config)
+    except Exception as exc:
+        logger.warning("[scraper] category=%s crawl failed: %s", category_id, exc)
+        return []
 
     if hasattr(result, "html") and isinstance(result.html, str) and result.html:
         import re as _re
