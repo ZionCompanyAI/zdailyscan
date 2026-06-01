@@ -1,11 +1,9 @@
 """RED tests — issue #124: cookies AliExpress devem ter domain e path."""
 
 import ast
-import importlib
 import inspect
 import json
 import re
-import textwrap
 
 
 def _scraper_source() -> str:
