@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import uuid
 from datetime import date
 
@@ -21,6 +22,20 @@ CATEGORIES: list[str] = [
 ]
 
 DEFAULT_KEYWORDS = "USB-C adapter,USB hub multiport,HDMI adapter,wireless charger,phone stand,laptop stand,bluetooth earphones,Thunderbolt hub,screen protector,power bank"
+
+TECH_KEYWORDS: list[str] = [
+    "usb", "hdmi", "hub", "adapter", "charger", "cable", "bluetooth",
+    "wifi", "laptop", "phone", "iphone", "android", "thunderbolt",
+    "display", "port", "wireless", "earphone", "headphone", "speaker",
+    "power bank", "screen", "monitor", "keyboard", "mouse", "ssd",
+    "memory", "ram", "type-c", "type c", "lightning", "ethernet",
+    "converter", "splitter", "docking", "stand", "mount",
+]
+
+
+def is_tech_product(title: str) -> bool:
+    title_lower = title.lower()
+    return any(re.search(r"\b" + re.escape(kw) + r"\b", title_lower) for kw in TECH_KEYWORDS)
 
 
 def get_active_keywords() -> list[str]:
@@ -81,6 +96,9 @@ async def run_daily_scan(
             cost = calculate_import_cost(product.price_usd, product.freight_usd)
             ali = AliProduct(product_id=product.product_id, title=product.title)
             score = score_product(ali, market, cost)
+            if not is_tech_product(product.title):
+                score.viavel = False
+                score.score_total = 0.0
             all_scores.append(score)
 
     viable = [s for s in all_scores if s.viavel]

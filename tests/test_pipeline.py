@@ -9,7 +9,7 @@ def _ali_products(n: int):
     from app.aliexpress import AliExpressProduct
 
     return [
-        AliExpressProduct(product_id=f"p{i}", title=f"Product {i}", price_usd=10.0)
+        AliExpressProduct(product_id=f"p{i}", title=f"USB Adapter Hub {i}", price_usd=10.0)
         for i in range(n)
     ]
 
