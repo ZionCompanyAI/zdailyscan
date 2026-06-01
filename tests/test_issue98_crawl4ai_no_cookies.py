@@ -29,7 +29,7 @@ _FIRE_PRODUCT = AliProduct(
 
 
 async def test_no_cookies_calls_crawl4ai_first():
-    """Issue #98: sem cookies → crawl4ai chamado primeiro (browser headless não precisa de cookies)."""
+    """Issue #98: sem cookies → crawl4ai chamado (browser headless não precisa de cookies)."""
     env = {
         "SCRAPER_MODE": "crawl4ai",
         "FIRECRAWL_URL": "http://firecrawl:3002",
@@ -41,43 +41,11 @@ async def test_no_cookies_calls_crawl4ai_first():
             new_callable=AsyncMock,
             return_value=[_CRAWL_PRODUCT],
         ) as mock_crawl:
-            with patch(
-                "app.scrapers.aliexpress.get_products_via_firecrawl",
-                new_callable=AsyncMock,
-                return_value=[_FIRE_PRODUCT],
-            ) as mock_fire:
-                results = await get_hot_products("200000783", min_rating=0.0)
+            results = await get_hot_products("200000783", min_rating=0.0)
 
     mock_crawl.assert_called_once()
-    mock_fire.assert_not_called()
     assert len(results) == 1
     assert results[0].product_id == "crawl001"
-
-
-async def test_no_cookies_crawl4ai_empty_falls_back_to_firecrawl():
-    """Issue #98: sem cookies, crawl4ai retorna [] → fallback Firecrawl acionado."""
-    env = {
-        "SCRAPER_MODE": "crawl4ai",
-        "FIRECRAWL_URL": "http://firecrawl:3002",
-        "ALIEXPRESS_SESSION_COOKIES": "",
-    }
-    with patch.dict(os.environ, env, clear=False):
-        with patch(
-            "app.scrapers.aliexpress._scrape_with_crawl4ai",
-            new_callable=AsyncMock,
-            return_value=[],
-        ) as mock_crawl:
-            with patch(
-                "app.scrapers.aliexpress.get_products_via_firecrawl",
-                new_callable=AsyncMock,
-                return_value=[_FIRE_PRODUCT],
-            ) as mock_fire:
-                results = await get_hot_products("200000783", min_rating=0.0)
-
-    mock_crawl.assert_called_once()
-    mock_fire.assert_called_once()
-    assert len(results) == 1
-    assert results[0].product_id == "fire001"
 
 
 async def test_no_cookies_no_firecrawl_url_returns_empty():

@@ -2,7 +2,6 @@ import os
 import re
 from unittest.mock import AsyncMock, patch
 
-from app.scrapers.models import AliProduct
 
 # Mirrors the acceptance criterion grep from issue #68:
 # grep -E "list--gallery--|list--item--|multi--|C2f2tvm|G8aNaOa|nXeOvyr|U-S0jtj|Ktbl2jB"
@@ -20,18 +19,8 @@ def test_product_schema_no_dynamic_hashes():
     assert not match, f"Schema contains stale/hash-based selector: '{match.group()}'"
 
 
-async def test_empty_crawl4ai_triggers_firecrawl():
-    """When crawl4ai returns 0 products and FIRECRAWL_URL is set, firecrawl fallback runs."""
-    fallback_product = AliProduct(
-        product_id="789",
-        title="Fallback Product",
-        price_usd=15.0,
-        sale_count_30d=100,
-        rating=5.0,
-        image_url="https://ae01.alicdn.com/kf/fallback.jpg",
-        product_url="https://www.aliexpress.com/item/789.html",
-        category_id="200000783",
-    )
+async def test_empty_crawl4ai_returns_empty_list():
+    """When crawl4ai returns 0 products, result is [] — no Firecrawl fallback (issue #115)."""
     env = {"SCRAPER_MODE": "crawl4ai", "FIRECRAWL_URL": "http://firecrawl:3002"}
 
     with patch.dict(os.environ, env):
@@ -40,18 +29,11 @@ async def test_empty_crawl4ai_triggers_firecrawl():
             new_callable=AsyncMock,
             return_value=[],
         ):
-            with patch(
-                "app.scrapers.aliexpress.get_products_via_firecrawl",
-                new_callable=AsyncMock,
-                return_value=[fallback_product],
-            ) as mock_fire:
-                from app.scrapers.aliexpress import get_hot_products
+            from app.scrapers.aliexpress import get_hot_products
 
-                results = await get_hot_products("200000783", min_rating=0.0)
+            results = await get_hot_products("200000783", min_rating=0.0)
 
-    mock_fire.assert_called_once()
-    assert len(results) == 1
-    assert results[0].product_id == "789"
+    assert results == []
 
 
 async def test_empty_crawl4ai_no_firecrawl_url_returns_empty():

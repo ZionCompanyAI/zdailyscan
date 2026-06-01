@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #115)
+- TASK-115: fix(scraper) — Firecrawl removido de get_hot_products; crawl4ai é sempre o scraper — arquivado 2026-06-01
+
 ## Concluído (issue #110)
 - TASK-110: feat(analyzer) — search_br_market_via_zoom Zoom.com.br fallback — arquivado 2026-06-01
 

@@ -5,7 +5,6 @@ rating=0.0 by default; a default of 4.9 filters all of them out.
 """
 
 import inspect
-import os
 from unittest.mock import AsyncMock, patch
 
 from app.scrapers.aliexpress import AliProduct, get_hot_products
@@ -18,11 +17,11 @@ def test_get_hot_products_default_min_rating_is_zero():
     assert default == 0.0, f"Expected min_rating default=0.0, got {default}"
 
 
-async def test_firecrawl_zero_rating_products_not_filtered_by_default():
-    """Without explicit min_rating, products returned by Firecrawl with rating=0.0 must survive."""
+async def test_zero_rating_products_not_filtered_by_default():
+    """Without explicit min_rating, products with rating=0.0 from crawl4ai must survive."""
     zero_rating_product = AliProduct(
         product_id="z1",
-        title="Firecrawl Product No Rating",
+        title="Crawl4AI Product No Rating",
         price_usd=9.99,
         sale_count_30d=2000,
         rating=0.0,
@@ -33,19 +32,9 @@ async def test_firecrawl_zero_rating_products_not_filtered_by_default():
     with patch(
         "app.scrapers.aliexpress._scrape_with_crawl4ai",
         new_callable=AsyncMock,
-        return_value=[],
+        return_value=[zero_rating_product],
     ):
-        with patch(
-            "app.scrapers.aliexpress.get_products_via_firecrawl",
-            new_callable=AsyncMock,
-            return_value=[zero_rating_product],
-        ):
-            env = {"FIRECRAWL_URL": "http://mock-firecrawl"}
-            env.pop("ALIEXPRESS_SESSION_COOKIES", None)
-            with patch.dict(os.environ, env, clear=False):
-                os.environ.pop("ALIEXPRESS_SESSION_COOKIES", None)
-                results = await get_hot_products("200000783")
+        results = await get_hot_products("200000783")
     assert len(results) == 1, (
-        "Products with rating=0.0 from Firecrawl must not be filtered when "
-        "min_rating uses its default value"
+        "Products with rating=0.0 must not be filtered when min_rating uses its default value"
     )
