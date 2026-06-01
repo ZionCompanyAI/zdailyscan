@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #110)
+- TASK-110: feat(analyzer) — search_br_market_via_zoom Zoom.com.br fallback — arquivado 2026-06-01
+
 ## Concluído (issue #108)
 - TASK-108: infra — proxy ML no OC01 (systemd ativo) — bloqueado: OC01 IP também 403 pela ML CloudFront WAF — arquivado 2026-06-01
 

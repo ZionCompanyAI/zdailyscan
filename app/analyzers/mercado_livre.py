@@ -63,6 +63,56 @@ async def _fetch_ml_search(
     return response.json()
 
 
+async def search_br_market_via_zoom(query: str) -> BRMarket:
+    import json as _json
+    import re as _re
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0",
+        "Accept-Language": "pt-BR,pt;q=0.9",
+    }
+    try:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            response = await client.get(
+                "https://www.zoom.com.br/search",
+                params={"q": query},
+                headers=headers,
+                timeout=20.0,
+            )
+            response.raise_for_status()
+        html = response.text
+    except Exception as exc:
+        logger.warning("zoom search failed for %r: %s", query[:60], exc)
+        return _not_found()
+
+    m = _re.search(r'"__NEXT_DATA__"[^>]*>(.*?)</script>', html, _re.S)
+    if not m:
+        return _not_found()
+
+    try:
+        data = _json.loads(m.group(1))
+        hits = data["props"]["initialReduxState"]["hits"]["hits"]
+    except (KeyError, _json.JSONDecodeError):
+        return _not_found()
+
+    prices = [h["price"] for h in hits if isinstance(h.get("price"), (int, float)) and h["price"] > 0]
+    if not prices:
+        return _not_found()
+
+    count_m = _re.search(r"([\d.]+)\s+resultado", html, _re.I)
+    count = int(count_m.group(1).replace(".", "")) if count_m else len(hits)
+    top = [f"https://www.zoom.com.br{h['url']}" for h in hits[:3] if h.get("url")]
+
+    return BRMarket(
+        found=True,
+        avg_price_brl=sum(prices) / len(prices),
+        min_price_brl=min(prices),
+        max_price_brl=max(prices),
+        result_count=count,
+        top_listings=top,
+    )
+
+
 async def search_br_market(query: str) -> BRMarket:
     token = await get_ml_token()
     headers = {"Authorization": f"Bearer {token}"} if token else {}
@@ -86,7 +136,7 @@ async def search_br_market(query: str) -> BRMarket:
                 data = await _fetch_ml_search(client, ML_SEARCH_URL, query, headers)
             except Exception as exc:
                 logger.warning("search_br_market failed for %r: %s", query[:60], exc)
-                return _not_found()
+                return await search_br_market_via_zoom(query)
 
     results = data.get("results", [])
     count = data.get("paging", {}).get("total", len(results))
