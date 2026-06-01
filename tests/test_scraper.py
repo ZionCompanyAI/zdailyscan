@@ -60,22 +60,22 @@ async def test_mock_mode_no_network():
 
 
 @pytest.mark.asyncio
-async def test_firecrawl_mode_uses_crawl4ai():
-    """SCRAPER_MODE=firecrawl agora usa crawl4ai — Firecrawl removido (issue #115)."""
+async def test_firecrawl_mode_uses_scrape_with_firecrawl():
+    """SCRAPER_MODE=firecrawl chama _scrape_with_firecrawl (issue #126)."""
     env = {
         "SCRAPER_MODE": "firecrawl",
-        "FIRECRAWL_URL": "http://firecrawl.test",
+        "FIRECRAWL_API_KEY": "fc-test",
         "ALIEXPRESS_SESSION_COOKIES": '[{"name":"x","value":"y"}]',
     }
     with patch.dict(os.environ, env):
         with patch(
-            "app.scrapers.aliexpress._scrape_with_crawl4ai",
+            "app.scrapers.aliexpress._scrape_with_firecrawl",
             new_callable=AsyncMock,
             return_value=[_FAKE_PRODUCT],
-        ) as mock_crawl:
+        ) as mock_fc:
             results = await get_hot_products("200000783")
 
-    mock_crawl.assert_called_once()
+    mock_fc.assert_called_once()
     assert results == [_FAKE_PRODUCT]
 
 
@@ -92,12 +92,13 @@ async def test_crawl4ai_mode_applies_min_rating_filter():
         product_url="",
         category_id="200000783",
     )
-    with patch(
-        "app.scrapers.aliexpress._scrape_with_crawl4ai",
-        new_callable=AsyncMock,
-        return_value=[_FAKE_PRODUCT, low_rated],
-    ):
-        results = await get_hot_products("200000783", min_rating=4.5)
+    with patch.dict(os.environ, {"SCRAPER_MODE": "crawl4ai"}):
+        with patch(
+            "app.scrapers.aliexpress._scrape_with_crawl4ai",
+            new_callable=AsyncMock,
+            return_value=[_FAKE_PRODUCT, low_rated],
+        ):
+            results = await get_hot_products("200000783", min_rating=4.5)
 
     assert all(p.rating >= 4.5 for p in results)
     assert low_rated not in results
