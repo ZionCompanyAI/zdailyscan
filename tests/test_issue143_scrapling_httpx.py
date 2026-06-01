@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.scrapers.aliexpress import AliProduct, _find_product_list, _scrape_with_scrapling
+from app.scrapers.aliexpress import _find_product_list, _scrape_with_scrapling
 
 _PRODUCT_ITEM = {
     "productId": "12345",
