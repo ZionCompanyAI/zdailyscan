@@ -71,11 +71,12 @@ async def search_br_market_via_zoom(query: str) -> BRMarket:
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0",
         "Accept-Language": "pt-BR,pt;q=0.9",
     }
+    zoom_query = " ".join(query.split()[:5])
     try:
         async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(
                 "https://www.zoom.com.br/search",
-                params={"q": query},
+                params={"q": zoom_query},
                 headers=headers,
                 timeout=20.0,
             )
