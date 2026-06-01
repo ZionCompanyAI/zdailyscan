@@ -92,12 +92,13 @@ async def test_crawl4ai_mode_applies_min_rating_filter():
         product_url="",
         category_id="200000783",
     )
-    with patch(
-        "app.scrapers.aliexpress._scrape_with_crawl4ai",
-        new_callable=AsyncMock,
-        return_value=[_FAKE_PRODUCT, low_rated],
-    ):
-        results = await get_hot_products("200000783", min_rating=4.5)
+    with patch.dict(os.environ, {"SCRAPER_MODE": "crawl4ai"}):
+        with patch(
+            "app.scrapers.aliexpress._scrape_with_crawl4ai",
+            new_callable=AsyncMock,
+            return_value=[_FAKE_PRODUCT, low_rated],
+        ):
+            results = await get_hot_products("200000783", min_rating=4.5)
 
     assert all(p.rating >= 4.5 for p in results)
     assert low_rated not in results

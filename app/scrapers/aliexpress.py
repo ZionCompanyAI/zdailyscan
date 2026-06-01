@@ -132,10 +132,132 @@ async def _scrape_with_crawl4ai(
     return products
 
 
+_HTTP_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.aliexpress.com/",
+    "X-Requested-With": "XMLHttpRequest",
+}
+
+_FN_PARAMS = {
+    "sortType": "total_tranpro_desc",
+    "page": "1",
+    "origin": "y",
+}
+
+
+def _parse_fn_json(data: dict, category_id: str, max_results: int) -> list[AliProduct]:
+    items = (
+        _deep_get(data, ["data", "result", "resultList"])
+        or _deep_get(data, ["result", "resultList"])
+        or _deep_get(data, ["data", "result", "mods", "itemList", "content"])
+        or []
+    )
+    products: list[AliProduct] = []
+    for entry in items[:max_results]:
+        try:
+            item = entry.get("item", entry)
+            pid = str(item.get("itemId", item.get("productId", ""))).strip()
+            if not pid:
+                continue
+            title = str(item.get("title", item.get("name", ""))).strip()
+            prices = item.get("prices", {})
+            sale_price = prices.get("salePrice", prices)
+            price_raw = (
+                str(sale_price.get("formattedPrice", "0"))
+                .replace("US $", "")
+                .replace(",", "")
+                .strip()
+            )
+            trade_raw = (
+                str(item.get("tradeDesc", item.get("tradeCount", "0")))
+                .replace("+", "")
+                .replace(",", "")
+                .replace("sold", "")
+                .strip()
+            )
+            # "2500 " → 2500, "2500.0" → 2500
+            trade_num = trade_raw.split()[0] if trade_raw else "0"
+            rating_raw = str(item.get("averageStar", item.get("avgStar", "0"))).strip()
+            img = str(item.get("imageUrl", item.get("image", ""))).strip()
+            if img.startswith("//"):
+                img = "https:" + img
+            products.append(
+                AliProduct(
+                    product_id=pid,
+                    title=title,
+                    price_usd=float(price_raw) if price_raw else 0.0,
+                    sale_count_30d=int(float(trade_num)) if trade_num else 0,
+                    rating=float(rating_raw) if rating_raw else 0.0,
+                    image_url=img,
+                    product_url=f"https://www.aliexpress.com/item/{pid}.html",
+                    category_id=category_id,
+                )
+            )
+        except (ValueError, TypeError):
+            continue
+    return products
+
+
+def _deep_get(d: dict, keys: list) -> list | None:
+    for key in keys:
+        if not isinstance(d, dict):
+            return None
+        d = d.get(key)
+        if d is None:
+            return None
+    return d if isinstance(d, list) else None
+
+
+async def _scrape_with_http(
+    category_id: str, max_results: int, session_cookies: str = ""
+) -> list[AliProduct]:
+    import httpx
+
+    cookies: dict[str, str] = {}
+    if session_cookies:
+        try:
+            raw = _json.loads(session_cookies)
+            cookies = {c["name"]: c["value"] for c in raw if "name" in c and "value" in c}
+        except Exception:
+            pass
+
+    params = {**_FN_PARAMS, "categoryId": category_id}
+
+    async def _fetch(url: str) -> list[AliProduct]:
+        try:
+            async with httpx.AsyncClient(
+                timeout=30, follow_redirects=True, cookies=cookies
+            ) as client:
+                resp = await client.get(url, headers=_HTTP_HEADERS, params=params)
+            body = resp.text
+            if body.lstrip().startswith("<"):
+                logger.warning(
+                    "[scraper:http] category=%s returned HTML (IP blocked) from %s",
+                    category_id,
+                    url,
+                )
+                return []
+            data = _json.loads(body)
+            return _parse_fn_json(data, category_id, max_results)
+        except Exception as exc:
+            logger.warning("[scraper:http] category=%s fetch failed: %s", category_id, exc)
+            return []
+
+    products = await _fetch("https://www.aliexpress.com/fn/search-pc/index")
+    if products:
+        return products
+    return await _fetch("https://m.aliexpress.com/fn/search-pc/index")
+
+
 async def get_hot_products(
     category_id: str, min_rating: float = 0.0, max_results: int = 100
 ) -> list[AliProduct]:
-    mode = os.environ.get("SCRAPER_MODE", "crawl4ai")
+    mode = os.environ.get("SCRAPER_MODE", "http")
     session_cookies = os.environ.get("ALIEXPRESS_SESSION_COOKIES", "")
 
     if mode == "mock":
@@ -143,6 +265,16 @@ async def get_hot_products(
 
         return get_mock_products(category_id, min_rating, max_results)
 
-    products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
+    if mode in ("crawl4ai", "firecrawl"):
+        products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
+    else:
+        products = await _scrape_with_http(category_id, max_results, session_cookies)
+        if not products:
+            logger.info(
+                "[scraper] http mode returned 0 products for category=%s, falling back to crawl4ai",
+                category_id,
+            )
+            products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
+
     filtered = [p for p in products if p.rating >= min_rating]
     return filtered[:max_results]
