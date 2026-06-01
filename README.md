@@ -42,6 +42,10 @@ uvicorn app.main:app --reload
 | `TELEGRAM_BOT_TOKEN` | Sim | Token do bot Telegram para notificações |
 | `MC_API_KEY` | Sim | API Key do Mission Control |
 | `MC_URL` | Sim | URL do Mission Control (ex: https://orchestrator.zioncompanyai.com.br) |
+| `AUTH_BUS_URL` | Não | URL do auth-bus para obter ML token dinamicamente |
+| `AUTH_BUS_API_KEY` | Não | API Key do auth-bus (obrigatória se `AUTH_BUS_URL` configurado) |
+| `ML_USER_ACCESS_TOKEN` | Não | ML access token estático (fallback quando auth-bus indisponível) |
+| `ML_SEARCH_PROXY_URL` | Não | URL de proxy para ML search (contorna bloqueio PolicyAgent em Railway) |
 | `SCAN_API_KEY` | Não | Chave para `POST /scan/run` (default: `test`) |
 | `USD_BRL_RATE` | Não | Taxa de câmbio USD/BRL (default: `5.70`) |
 | `DASHBOARD_USERNAME` | Não | Usuário do dashboard web (default: `admin`) |
