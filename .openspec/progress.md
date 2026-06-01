@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #108)
+- TASK-108: infra — proxy ML no OC01 (systemd ativo) — bloqueado: OC01 IP também 403 pela ML CloudFront WAF — arquivado 2026-06-01
+
 ## Concluído (issue #104)
 - TASK-104: fix(analyzer) — ML search proxiada via ML_SEARCH_PROXY_URL (PolicyAgent block) — arquivado 2026-06-01
 
