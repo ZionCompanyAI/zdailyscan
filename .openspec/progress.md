@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #139)
+- TASK-139: feat(scraper) — SCRAPER_MODE=scrapling com StealthyFetcher (HTTP puro, sem custos) + fallback automático firecrawl→scrapling em caso de 402 — arquivado 2026-06-01
+
 ## Concluído (issue #129)
 - TASK-129: chore — remover categorias não-tech (Home & Garden 200000828, Sports 200000834) de CATEGORIES e CATEGORY_NAMES; 4 testes atualizados para 3 categorias — arquivado 2026-06-01
 
