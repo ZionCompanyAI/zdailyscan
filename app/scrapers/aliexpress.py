@@ -1,7 +1,10 @@
 import json as _json
+import logging
 import os
 
 from app.scrapers.models import AliProduct
+
+logger = logging.getLogger(__name__)
 
 __all__ = ["AliProduct", "get_hot_products"]
 
@@ -44,13 +47,34 @@ async def _scrape_with_crawl4ai(
     from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 
     url = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
-    browser_config = BrowserConfig(headless=True)
+    browser_config = BrowserConfig(
+        headless=True,
+        user_agent_mode="random",
+        user_agent_generator_config={"device_type": "desktop", "os_type": "windows"},
+    )
     strategy = JsonCssExtractionStrategy(_PRODUCT_SCHEMA)
 
-    run_config = CrawlerRunConfig(extraction_strategy=strategy)
+    run_config = CrawlerRunConfig(
+        extraction_strategy=strategy,
+        magic=True,
+        wait_for="css:[data-item-id]",
+        page_timeout=45000,
+        js_code="window.scrollTo(0, document.body.scrollHeight);",
+    )
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         result = await crawler.arun(url=url, config=run_config)
+
+    if hasattr(result, "html") and isinstance(result.html, str) and result.html:
+        import re as _re
+        title_m = _re.search(r"<title[^>]*>(.*?)</title>", result.html[:2000], _re.I | _re.S)
+        page_title = title_m.group(1).strip() if title_m else "(sem título)"
+        logger.info(
+            "[scraper] category=%s page_title=%r extracted=%s",
+            category_id,
+            page_title[:80],
+            len(_json.loads(result.extracted_content or "[]")),
+        )
 
     raw_content = result.extracted_content or "[]"
     if isinstance(raw_content, str):
