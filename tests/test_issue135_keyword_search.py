@@ -1,7 +1,5 @@
-import os
 import importlib
 import inspect
-import pytest
 
 
 def test_get_active_keywords_default():
