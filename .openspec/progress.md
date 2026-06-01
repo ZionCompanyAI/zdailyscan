@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #124)
+- TASK-124: fix(scraper) — domain+path injetados nos cookies AliExpress para Playwright — arquivado 2026-06-01
+
 ## Concluído (issue #122)
 - TASK-122: fix(scraper) — session_cookies injetado no BrowserConfig, wait_for removido, try/except no crawler — arquivado 2026-06-01
 

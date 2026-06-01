@@ -121,7 +121,10 @@ def test_valid_cookies_passed_to_browser_config():
         asyncio.run(mod._scrape_with_crawl4ai("200000783", 10, cookies_json))
 
     assert "cookies" in captured, "BrowserConfig not called with cookies= kwarg"
-    assert captured["cookies"] == [{"name": "aep_usuc_f", "value": "site=glo"}]
+    # issue #124: domain e path são injetados com defaults quando ausentes
+    assert captured["cookies"] == [
+        {"name": "aep_usuc_f", "value": "site=glo", "domain": ".aliexpress.com", "path": "/"}
+    ]
 
 
 # ---------------------------------------------------------------------------

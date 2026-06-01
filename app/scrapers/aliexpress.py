@@ -51,7 +51,13 @@ async def _scrape_with_crawl4ai(
     cookies: list[dict] = []
     if session_cookies:
         try:
-            cookies = _json.loads(session_cookies)
+            raw = _json.loads(session_cookies)
+            for c in raw:
+                cookies.append({
+                    **c,
+                    "domain": c.get("domain", ".aliexpress.com"),
+                    "path": c.get("path", "/"),
+                })
         except Exception:
             pass
 
