@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #103)
+- TASK-103: fix(analyzer) — get_ml_token auth-bus dinâmico, fallback ML_USER_ACCESS_TOKEN — arquivado 2026-06-01
+
 ## Concluído (issue #100)
 - TASK-100: fix(scraper) — CrawlerRunConfig cookies kwarg removido — arquivado 2026-06-01
 
