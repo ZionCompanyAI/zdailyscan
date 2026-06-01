@@ -239,8 +239,9 @@ async def test_pipeline_run_uses_active_categories(monkeypatch):
 
     calls = []
 
-    async def mock_get_hot(cat_id):
-        calls.append(cat_id)
+    async def mock_get_hot(cat_id, min_rating=0.0, max_results=100, keyword=""):
+        if cat_id:
+            calls.append(cat_id)
         return products
 
     with (
