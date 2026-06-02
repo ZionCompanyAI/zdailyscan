@@ -457,8 +457,68 @@ async def _scrape_with_scrapling(
         return []
 
     raw = html[m.end():]
-    raw = re.sub(r'([{,\[]\s*)undefined(\s*:)', r'\1"_undefined_"\2', raw)
-    raw = re.sub(r'\b(undefined|NaN|-?Infinity)\b', 'null', raw)
+
+    def _js_to_json(s: str) -> str:
+        """Convert JS object literal to valid JSON: quote unquoted keys, fix JS values."""
+        out = []
+        i = 0
+        n = len(s)
+        while i < n:
+            ch = s[i]
+            if ch in ('"', "'"):
+                quote = ch
+                out.append('"')
+                i += 1
+                while i < n:
+                    c = s[i]
+                    if c == '\\':
+                        out.append(c)
+                        i += 1
+                        if i < n:
+                            out.append(s[i])
+                    elif c == quote:
+                        out.append('"')
+                        break
+                    elif c == '"' and quote == "'":
+                        out.append('\\"')
+                    else:
+                        out.append(c)
+                    i += 1
+                i += 1
+                continue
+            if ch in ('{', ','):
+                out.append(ch)
+                i += 1
+                ws_start = i
+                while i < n and s[i] in ' \t\n\r':
+                    i += 1
+                ws = s[ws_start:i]
+                if i < n and (s[i].isalpha() or s[i] in '_$'):
+                    j = i
+                    while j < n and (s[j].isalnum() or s[j] in '_$'):
+                        j += 1
+                    k = j
+                    while k < n and s[k] in ' \t\n\r':
+                        k += 1
+                    if k < n and s[k] == ':' and (k + 1 >= n or s[k + 1] != ':'):
+                        out.append(ws)
+                        out.append('"')
+                        out.append(s[i:j])
+                        out.append('"')
+                        i = j
+                        continue
+                out.append(ws)
+                continue
+            out.append(ch)
+            i += 1
+        result = ''.join(out)
+        result = re.sub(r'\bundefined\b', 'null', result)
+        result = re.sub(r'\bNaN\b', 'null', result)
+        result = re.sub(r'-?Infinity\b', 'null', result)
+        result = re.sub(r',(\s*[}\]])', r'\1', result)
+        return result
+
+    raw = _js_to_json(raw)
 
     try:
         data, _ = _json.JSONDecoder().raw_decode(raw)
