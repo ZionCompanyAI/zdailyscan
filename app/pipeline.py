@@ -65,6 +65,7 @@ async def run_daily_scan(
         except Exception as exc:
             logger.warning("scraper failed for category %s: %r", category_id, exc)
             continue
+        await asyncio.sleep(2)  # rate limiting delay between AliExpress targets
         for product in products:
             try:
                 market = await search_br_market(product.title)
