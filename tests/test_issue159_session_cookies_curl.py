@@ -177,7 +177,6 @@ async def test_pipeline_sleep_called_between_targets(monkeypatch):
 @pytest.mark.asyncio
 async def test_pipeline_sleep_value_is_2(monkeypatch):
     """O delay entre targets deve ser exatamente 2 segundos."""
-    from app.analyzers.mercado_livre import BRMarket
 
     monkeypatch.setattr("app.pipeline.CATEGORIES", ["cat1"])
     monkeypatch.setattr("app.pipeline.get_active_keywords", lambda: [])
