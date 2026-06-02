@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #154)
+- TASK-154: fix(scraper) — subprocess curl --compressed + regex undefined-como-chave (2 passos) + NaN/Infinity→null + nixpacks.toml + preço None-safe — arquivado 2026-06-01
+
 ## Concluído (issue #150)
 - TASK-150: fix(scraper) — Accept-Encoding + 9 browser headers em _SCRAPLING_HEADERS + retry 3x com asyncio.sleep(4) em _scrape_with_scrapling — arquivado 2026-06-01
 
