@@ -39,6 +39,13 @@ def _make_resp(html: str, status_code: int = 200) -> MagicMock:
     return resp
 
 
+def _make_curl_result(html: str, returncode: int = 0) -> MagicMock:
+    result = MagicMock()
+    result.returncode = returncode
+    result.stdout = html.encode("utf-8")
+    return result
+
+
 # --- Header presence tests ---
 
 
@@ -63,12 +70,12 @@ def test_scrapling_headers_contain_sec_fetch_dest():
 
 @pytest.mark.asyncio
 async def test_scrapling_no_retry_on_first_success():
-    """httpx.get é chamado apenas 1x quando a primeira resposta já tem JS data."""
+    """subprocess.run é chamado apenas 1x quando a primeira resposta já tem JS data."""
     with patch("asyncio.sleep") as mock_sleep:
-        with patch("httpx.get", return_value=_make_resp(_full_html())) as mock_get:
+        with patch("subprocess.run", return_value=_make_curl_result(_full_html())) as mock_sub:
             products = await _scrape_with_scrapling("200003655", max_results=10)
 
-    mock_get.assert_called_once()
+    mock_sub.assert_called_once()
     mock_sleep.assert_not_called()
     assert len(products) == 1
 
@@ -76,13 +83,13 @@ async def test_scrapling_no_retry_on_first_success():
 @pytest.mark.asyncio
 async def test_scrapling_retry_on_thin_page_succeeds_on_second_attempt():
     """Thin page na 1ª tentativa → retry → JS data na 2ª → retorna produtos."""
-    responses = [_make_resp(_thin_html()), _make_resp(_full_html())]
+    responses = [_make_curl_result(_thin_html()), _make_curl_result(_full_html())]
 
     with patch("asyncio.sleep") as mock_sleep:
-        with patch("httpx.get", side_effect=responses) as mock_get:
+        with patch("subprocess.run", side_effect=responses) as mock_sub:
             products = await _scrape_with_scrapling("200003655", max_results=10)
 
-    assert mock_get.call_count == 2
+    assert mock_sub.call_count == 2
     mock_sleep.assert_called_once_with(4)
     assert len(products) == 1
     assert products[0].product_id == "54321"
@@ -92,10 +99,10 @@ async def test_scrapling_retry_on_thin_page_succeeds_on_second_attempt():
 async def test_scrapling_retry_exhausted_returns_empty():
     """Após 3 tentativas sem JS data, retorna []."""
     with patch("asyncio.sleep") as mock_sleep:
-        with patch("httpx.get", return_value=_make_resp(_thin_html())) as mock_get:
+        with patch("subprocess.run", return_value=_make_curl_result(_thin_html())) as mock_sub:
             products = await _scrape_with_scrapling("200003655", max_results=10)
 
-    assert mock_get.call_count == 3
+    assert mock_sub.call_count == 3
     assert mock_sleep.call_count == 2
     assert products == []
 
@@ -105,12 +112,12 @@ async def test_scrapling_retry_on_exception_attempts_again():
     """Exceção na 1ª tentativa → retry → JS data na 2ª → retorna produtos."""
     with patch("asyncio.sleep"):
         with patch(
-            "httpx.get",
-            side_effect=[Exception("timeout"), _make_resp(_full_html())],
-        ) as mock_get:
+            "subprocess.run",
+            side_effect=[Exception("timeout"), _make_curl_result(_full_html())],
+        ) as mock_sub:
             products = await _scrape_with_scrapling("200003655", max_results=10)
 
-    assert mock_get.call_count == 2
+    assert mock_sub.call_count == 2
     assert len(products) == 1
 
 
@@ -118,8 +125,8 @@ async def test_scrapling_retry_on_exception_attempts_again():
 async def test_scrapling_all_exceptions_returns_empty():
     """3 exceções consecutivas → retorna []."""
     with patch("asyncio.sleep"):
-        with patch("httpx.get", side_effect=Exception("refused")) as mock_get:
+        with patch("subprocess.run", side_effect=Exception("refused")) as mock_sub:
             products = await _scrape_with_scrapling("200003655", max_results=10)
 
-    assert mock_get.call_count == 3
+    assert mock_sub.call_count == 3
     assert products == []

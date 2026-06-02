@@ -35,10 +35,17 @@ def _make_resp(html: str, status_code: int = 200) -> MagicMock:
     return resp
 
 
+def _make_curl_result(html: str, returncode: int = 0) -> MagicMock:
+    result = MagicMock()
+    result.returncode = returncode
+    result.stdout = html.encode("utf-8")
+    return result
+
+
 @pytest.mark.asyncio
 async def test_scrapling_httpx_returns_products():
     """_scrape_with_scrapling extrai produtos de window._dida_config_._init_data_."""
-    with patch("httpx.get", return_value=_make_resp(_make_html(_INIT_DATA))):
+    with patch("subprocess.run", return_value=_make_curl_result(_make_html(_INIT_DATA))):
         products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert len(products) == 1
@@ -56,7 +63,7 @@ async def test_scrapling_httpx_returns_products():
 async def test_scrapling_no_init_data_returns_empty():
     """_scrape_with_scrapling retorna [] quando _init_data_ não está no HTML."""
     with patch("asyncio.sleep"):
-        with patch("httpx.get", return_value=_make_resp(_make_html(None))):
+        with patch("subprocess.run", return_value=_make_curl_result(_make_html(None))):
             products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products == []
@@ -64,9 +71,9 @@ async def test_scrapling_no_init_data_returns_empty():
 
 @pytest.mark.asyncio
 async def test_scrapling_httpx_exception_returns_empty():
-    """_scrape_with_scrapling retorna [] quando httpx.get levanta exceção."""
+    """_scrape_with_scrapling retorna [] quando subprocess.run levanta exceção."""
     with patch("asyncio.sleep"):
-        with patch("httpx.get", side_effect=Exception("connection refused")):
+        with patch("subprocess.run", side_effect=Exception("connection refused")):
             products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products == []
@@ -76,7 +83,7 @@ async def test_scrapling_httpx_exception_returns_empty():
 async def test_scrapling_no_asyncio_to_thread():
     """_scrape_with_scrapling não usa asyncio.to_thread (sem Playwright)."""
     with patch("asyncio.sleep"):
-        with patch("httpx.get", return_value=_make_resp(_make_html(None))):
+        with patch("subprocess.run", return_value=_make_curl_result(_make_html(None))):
             with patch("asyncio.to_thread") as mock_thread:
                 await _scrape_with_scrapling("200003655", max_results=10)
 
@@ -91,12 +98,12 @@ async def test_scrapling_keyword_uses_wholesale_url():
     keyword = "wireless earbuds"
     captured = []
 
-    def fake_get(url, **kwargs):
-        captured.append(url)
-        return _make_resp(_make_html(None))
+    def fake_run(cmd, **kwargs):
+        captured.append(cmd[-1])
+        return _make_curl_result(_make_html(None))
 
     with patch("asyncio.sleep"):
-        with patch("httpx.get", side_effect=fake_get):
+        with patch("subprocess.run", side_effect=fake_run):
             await _scrape_with_scrapling("200003655", max_results=10, keyword=keyword)
 
     assert len(captured) >= 1
@@ -109,12 +116,12 @@ async def test_scrapling_no_keyword_uses_category_url():
     """Sem keyword, _scrape_with_scrapling usa URL de categoria/bestselling.html."""
     captured = []
 
-    def fake_get(url, **kwargs):
-        captured.append(url)
-        return _make_resp(_make_html(None))
+    def fake_run(cmd, **kwargs):
+        captured.append(cmd[-1])
+        return _make_curl_result(_make_html(None))
 
     with patch("asyncio.sleep"):
-        with patch("httpx.get", side_effect=fake_get):
+        with patch("subprocess.run", side_effect=fake_run):
             await _scrape_with_scrapling("200003655", max_results=10)
 
     assert len(captured) >= 1
@@ -130,7 +137,7 @@ async def test_scrapling_max_results_respected():
         for i in range(5)
     ]
     data = {"data": {"resultList": items}}
-    with patch("httpx.get", return_value=_make_resp(_make_html(data))):
+    with patch("subprocess.run", return_value=_make_curl_result(_make_html(data))):
         products = await _scrape_with_scrapling("200003655", max_results=3)
 
     assert len(products) == 3
@@ -139,7 +146,7 @@ async def test_scrapling_max_results_respected():
 @pytest.mark.asyncio
 async def test_scrapling_image_protocol_added():
     """URL de imagem protocol-relative '//' recebe 'https:' no prefixo."""
-    with patch("httpx.get", return_value=_make_resp(_make_html(_INIT_DATA))):
+    with patch("subprocess.run", return_value=_make_curl_result(_make_html(_INIT_DATA))):
         products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products[0].image_url.startswith("https://")

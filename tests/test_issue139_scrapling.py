@@ -46,6 +46,13 @@ def _make_resp(html: str) -> MagicMock:
     return resp
 
 
+def _make_curl_result(html: str, returncode: int = 0) -> MagicMock:
+    result = MagicMock()
+    result.returncode = returncode
+    result.stdout = html.encode("utf-8")
+    return result
+
+
 def _make_mock_page(cards: list[dict] | None = None):
     """Mantido para compatibilidade — não é mais usado na implementação."""
     page = MagicMock()
@@ -124,7 +131,7 @@ async def test_scrapling_mode_does_not_call_firecrawl():
 @pytest.mark.asyncio
 async def test_scrapling_returns_aliproducts_with_valid_fields():
     """_scrape_with_scrapling retorna lista de AliProduct com campos preenchidos."""
-    with patch("httpx.get", return_value=_make_resp(_make_html(_INIT_DATA))):
+    with patch("subprocess.run", return_value=_make_curl_result(_make_html(_INIT_DATA))):
         products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert isinstance(products, list)
@@ -137,7 +144,7 @@ async def test_scrapling_returns_aliproducts_with_valid_fields():
 async def test_scrapling_empty_page_returns_empty_list():
     """_scrape_with_scrapling retorna [] quando página não tem _init_data_."""
     with patch("asyncio.sleep"):
-        with patch("httpx.get", return_value=_make_resp(_make_html(None))):
+        with patch("subprocess.run", return_value=_make_curl_result(_make_html(None))):
             products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products == []
@@ -145,9 +152,9 @@ async def test_scrapling_empty_page_returns_empty_list():
 
 @pytest.mark.asyncio
 async def test_scrapling_exception_returns_empty_list():
-    """_scrape_with_scrapling retorna [] quando httpx.get levanta exceção."""
+    """_scrape_with_scrapling retorna [] quando subprocess.run levanta exceção."""
     with patch("asyncio.sleep"):
-        with patch("httpx.get", side_effect=Exception("network error")):
+        with patch("subprocess.run", side_effect=Exception("network error")):
             products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products == []
@@ -237,12 +244,12 @@ async def test_scrapling_keyword_search_uses_wholesale_url():
     expected_url_fragment = urllib.parse.quote_plus(keyword)
     captured_urls = []
 
-    def fake_get(url, **kwargs):
-        captured_urls.append(url)
-        return _make_resp(_make_html(None))
+    def fake_run(cmd, **kwargs):
+        captured_urls.append(cmd[-1])
+        return _make_curl_result(_make_html(None))
 
     with patch("asyncio.sleep"):
-        with patch("httpx.get", side_effect=fake_get):
+        with patch("subprocess.run", side_effect=fake_run):
             await _scrape_with_scrapling("200003655", max_results=10, keyword=keyword)
 
     assert len(captured_urls) >= 1
