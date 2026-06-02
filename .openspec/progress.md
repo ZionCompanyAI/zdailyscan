@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #159)
+- TASK-159: fix(scraper): session cookies passados ao subprocess curl + asyncio.sleep(2) entre targets no pipeline — arquivado 2026-06-01
+
 ## Concluído (issue #154)
 - TASK-154: fix(scraper) — subprocess curl --compressed + regex undefined-como-chave (2 passos) + NaN/Infinity→null + nixpacks.toml + preço None-safe — arquivado 2026-06-01
 
