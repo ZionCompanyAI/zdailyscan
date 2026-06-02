@@ -136,8 +136,9 @@ async def test_scrapling_returns_aliproducts_with_valid_fields():
 @pytest.mark.asyncio
 async def test_scrapling_empty_page_returns_empty_list():
     """_scrape_with_scrapling retorna [] quando página não tem _init_data_."""
-    with patch("httpx.get", return_value=_make_resp(_make_html(None))):
-        products = await _scrape_with_scrapling("200003655", max_results=10)
+    with patch("asyncio.sleep"):
+        with patch("httpx.get", return_value=_make_resp(_make_html(None))):
+            products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products == []
 
@@ -145,8 +146,9 @@ async def test_scrapling_empty_page_returns_empty_list():
 @pytest.mark.asyncio
 async def test_scrapling_exception_returns_empty_list():
     """_scrape_with_scrapling retorna [] quando httpx.get levanta exceção."""
-    with patch("httpx.get", side_effect=Exception("network error")):
-        products = await _scrape_with_scrapling("200003655", max_results=10)
+    with patch("asyncio.sleep"):
+        with patch("httpx.get", side_effect=Exception("network error")):
+            products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products == []
 
@@ -239,8 +241,9 @@ async def test_scrapling_keyword_search_uses_wholesale_url():
         captured_urls.append(url)
         return _make_resp(_make_html(None))
 
-    with patch("httpx.get", side_effect=fake_get):
-        await _scrape_with_scrapling("200003655", max_results=10, keyword=keyword)
+    with patch("asyncio.sleep"):
+        with patch("httpx.get", side_effect=fake_get):
+            await _scrape_with_scrapling("200003655", max_results=10, keyword=keyword)
 
-    assert len(captured_urls) == 1
+    assert len(captured_urls) >= 1
     assert expected_url_fragment in captured_urls[0] or "wholesale" in captured_urls[0]

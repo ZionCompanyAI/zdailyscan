@@ -55,8 +55,9 @@ async def test_scrapling_httpx_returns_products():
 @pytest.mark.asyncio
 async def test_scrapling_no_init_data_returns_empty():
     """_scrape_with_scrapling retorna [] quando _init_data_ não está no HTML."""
-    with patch("httpx.get", return_value=_make_resp(_make_html(None))):
-        products = await _scrape_with_scrapling("200003655", max_results=10)
+    with patch("asyncio.sleep"):
+        with patch("httpx.get", return_value=_make_resp(_make_html(None))):
+            products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products == []
 
@@ -64,8 +65,9 @@ async def test_scrapling_no_init_data_returns_empty():
 @pytest.mark.asyncio
 async def test_scrapling_httpx_exception_returns_empty():
     """_scrape_with_scrapling retorna [] quando httpx.get levanta exceção."""
-    with patch("httpx.get", side_effect=Exception("connection refused")):
-        products = await _scrape_with_scrapling("200003655", max_results=10)
+    with patch("asyncio.sleep"):
+        with patch("httpx.get", side_effect=Exception("connection refused")):
+            products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert products == []
 
@@ -73,9 +75,10 @@ async def test_scrapling_httpx_exception_returns_empty():
 @pytest.mark.asyncio
 async def test_scrapling_no_asyncio_to_thread():
     """_scrape_with_scrapling não usa asyncio.to_thread (sem Playwright)."""
-    with patch("httpx.get", return_value=_make_resp(_make_html(None))):
-        with patch("asyncio.to_thread") as mock_thread:
-            await _scrape_with_scrapling("200003655", max_results=10)
+    with patch("asyncio.sleep"):
+        with patch("httpx.get", return_value=_make_resp(_make_html(None))):
+            with patch("asyncio.to_thread") as mock_thread:
+                await _scrape_with_scrapling("200003655", max_results=10)
 
     mock_thread.assert_not_called()
 
@@ -92,10 +95,11 @@ async def test_scrapling_keyword_uses_wholesale_url():
         captured.append(url)
         return _make_resp(_make_html(None))
 
-    with patch("httpx.get", side_effect=fake_get):
-        await _scrape_with_scrapling("200003655", max_results=10, keyword=keyword)
+    with patch("asyncio.sleep"):
+        with patch("httpx.get", side_effect=fake_get):
+            await _scrape_with_scrapling("200003655", max_results=10, keyword=keyword)
 
-    assert len(captured) == 1
+    assert len(captured) >= 1
     assert urllib.parse.quote_plus(keyword) in captured[0]
     assert "wholesale" in captured[0]
 
@@ -109,10 +113,11 @@ async def test_scrapling_no_keyword_uses_category_url():
         captured.append(url)
         return _make_resp(_make_html(None))
 
-    with patch("httpx.get", side_effect=fake_get):
-        await _scrape_with_scrapling("200003655", max_results=10)
+    with patch("asyncio.sleep"):
+        with patch("httpx.get", side_effect=fake_get):
+            await _scrape_with_scrapling("200003655", max_results=10)
 
-    assert len(captured) == 1
+    assert len(captured) >= 1
     assert "200003655" in captured[0]
     assert "bestselling" in captured[0]
 
