@@ -6,11 +6,11 @@ from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.pipeline import ScanResult, run_daily_scan
+from app.pipeline import ScanResult
 from app.routers import auth, dashboard
 from app.scheduler import create_scheduler
 from app.scrapers import get_hot_products
-from app.storage import get_latest_scan, load_scan, save_scan
+from app.storage import get_latest_scan, load_scan
 
 
 @asynccontextmanager
@@ -70,12 +70,7 @@ async def scan_run(
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     scan_id = str(uuid.uuid4())
-
-    async def _do_scan() -> None:
-        result = await run_daily_scan(scan_id=scan_id)
-        save_scan(result)
-
-    background_tasks.add_task(_do_scan)
+    background_tasks.add_task(dashboard._run_scan_background, scan_id)
     return {"status": "started", "scan_id": scan_id}
 
 
