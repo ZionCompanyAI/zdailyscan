@@ -64,6 +64,7 @@ def get_active_categories() -> list[str]:
 class ScanResult(BaseModel):
     scan_id: str
     date: str
+    status: str = "completed"
     products: list[ProductScore]
     total_scanned: int
     total_viable: int
