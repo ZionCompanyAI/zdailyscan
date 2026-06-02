@@ -417,7 +417,8 @@ async def _scrape_with_scrapling(
         return []
 
     raw = html[m.end():]
-    raw = re.sub(r"\bundefined\b", "null", raw)
+    raw = re.sub(r'\bundefined\b(\s*:)', r'"undefined"\1', raw)
+    raw = re.sub(r':\s*\bundefined\b', ': null', raw)
 
     try:
         data, _ = _json.JSONDecoder().raw_decode(raw)

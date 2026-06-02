@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #147)
+- TASK-147: fix(scraper) — undefined como CHAVE em _init_data_ JSON agora é quoted ("undefined") em vez de substituído por bare null; undefined como VALOR mantém → null; NaN/Infinity dispensam regex (Python json decoder nativo) — arquivado 2026-06-01
+
 ## Concluído (issue #145)
 - TASK-145: fix(scraper) — sanitize `undefined` JS token via re.sub antes do raw_decode + multi-pattern fallback (_init_data_ → runParams → __INITIAL_STATE__) para keyword search + None-safe numeric parsing — arquivado 2026-06-01
 
