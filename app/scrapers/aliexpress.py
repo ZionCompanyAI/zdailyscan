@@ -397,6 +397,19 @@ async def _scrape_with_scrapling(
     import subprocess as _subprocess
     import urllib.parse
 
+    import json as _json_cookies
+    import os as _os_cookies
+    _session_cookies_raw = _os_cookies.environ.get("ALIEXPRESS_SESSION_COOKIES", "")
+    _cookie_header = ""
+    if _session_cookies_raw:
+        try:
+            _raw_cookies = _json_cookies.loads(_session_cookies_raw)
+            _cookie_header = "; ".join(
+                f"{c['name']}={c['value']}" for c in _raw_cookies if c.get("value")
+            )
+        except Exception:
+            pass
+
     if keyword:
         url = f"https://www.aliexpress.com/wholesale?SearchText={urllib.parse.quote_plus(keyword)}&SortType=total_tranpro_desc"
     else:
@@ -419,6 +432,7 @@ async def _scrape_with_scrapling(
                  "-H", f"Accept: {_SCRAPLING_HEADERS['Accept']}",
                  "-H", "Accept-Language: en-US,en;q=0.9",
                  "-H", "Accept-Encoding: gzip, deflate, br",
+                 ] + (["-H", f"Cookie: {_cookie_header}"] if _cookie_header else []) + [
                  url],
                 capture_output=True, timeout=25
             )
