@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #137)
+- TASK-137: fix(pipeline) — TECH_KEYWORDS + is_tech_product() regex word-boundary; categoria scan filtra non-tech antes de chamadas de API; keyword scan não afetado — arquivado 2026-06-02
+
 ## Concluído (issue #154)
 - TASK-154: fix(scraper) — subprocess curl --compressed + regex undefined-como-chave (2 passos) + NaN/Infinity→null + nixpacks.toml + preço None-safe — arquivado 2026-06-01
 

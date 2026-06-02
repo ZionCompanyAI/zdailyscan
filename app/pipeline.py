@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re
 import uuid
 from datetime import date
 
@@ -15,6 +16,26 @@ from app.reporters.telegram_reporter import send_daily_report
 from app.reporters.file_reporter import save_daily_report
 
 logger = logging.getLogger(__name__)
+
+TECH_KEYWORDS: list[str] = [
+    "usb", "hdmi", "hub", "adapter", "charger", "cable", "bluetooth",
+    "wifi", "laptop", "phone", "iphone", "android", "thunderbolt",
+    "display", "port", "wireless", "earphone", "headphone", "speaker",
+    "power bank", "screen", "monitor", "keyboard", "mouse", "ssd",
+    "memory", "ram", "type-c", "type c", "lightning", "ethernet",
+    "converter", "splitter", "docking", "stand", "mount",
+]
+
+
+_TECH_PATTERN = re.compile(
+    r"\b(" + "|".join(re.escape(kw) for kw in TECH_KEYWORDS) + r")\b",
+    re.IGNORECASE,
+)
+
+
+def is_tech_product(title: str) -> bool:
+    return bool(_TECH_PATTERN.search(title))
+
 
 CATEGORIES: list[str] = [
     "200003655",  # Consumer Electronics
@@ -69,6 +90,21 @@ async def run_daily_scan(
             continue
         await asyncio.sleep(2)  # rate limiting delay between AliExpress targets
         for product in products:
+            if not keyword and not is_tech_product(product.title):
+                all_scores.append(ProductScore(
+                    product_id=product.product_id,
+                    title=product.title,
+                    score_total=0.0,
+                    score_margem=0.0,
+                    score_demanda_br=0.0,
+                    score_oportunidade=0.0,
+                    score_tendencia=0.0,
+                    score_logistica=0.0,
+                    margin_brl=0.0,
+                    sell_price_suggestion_brl=0.0,
+                    viavel=False,
+                ))
+                continue
             try:
                 market = await search_br_market(product.title)
             except Exception as exc:
