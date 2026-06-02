@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #167)
+- TASK-167: fix(pipeline+api) — ScanResult.status="completed" (default) + /scan/run redireciona para _run_scan_background do dashboard (atualiza _scan_status corretamente) — arquivado 2026-06-02
+
 ## Concluído (issue #137)
 - TASK-137: fix(pipeline) — TECH_KEYWORDS + is_tech_product() regex word-boundary; categoria scan filtra non-tech antes de chamadas de API; keyword scan não afetado — arquivado 2026-06-02
 
