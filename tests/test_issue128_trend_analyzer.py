@@ -188,7 +188,7 @@ def test_compute_trend_score_cache_hit(monkeypatch):
     ta._trend_cache[keyword] = (0.88, datetime.now(timezone.utc).replace(tzinfo=None))
 
     with patch("app.analyzers.trend_analyzer.fetch_google_trends_br") as mock_gt:
-        score = compute_trend_score(keyword)
+        compute_trend_score(keyword)
         mock_gt.assert_not_called()
 
     assert score == pytest.approx(0.88)
@@ -204,7 +204,7 @@ def test_compute_trend_score_cache_expired(monkeypatch):
 
     with patch("app.analyzers.trend_analyzer.fetch_google_trends_br") as mock_gt:
         mock_gt.return_value = {keyword: 0.42}
-        score = compute_trend_score(keyword)
+        compute_trend_score(keyword)
         mock_gt.assert_called_once()
 
     ta._trend_cache.pop(keyword, None)
