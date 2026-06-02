@@ -1,7 +1,6 @@
 """Testes para filtro de produtos non-tech em scan de categorias (issue #137)."""
 from unittest.mock import AsyncMock, patch
 
-import pytest
 
 from app.analyzers.import_calculator import ImportCost
 from app.analyzers.mercado_livre import BRMarket
