@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import uuid
@@ -82,6 +83,7 @@ async def run_daily_scan(
             ali = AliProduct(product_id=product.product_id, title=product.title)
             score = score_product(ali, market, cost)
             all_scores.append(score)
+        await asyncio.sleep(2)
 
     viable = [s for s in all_scores if s.viavel]
     top20 = sorted(viable, key=lambda s: s.score_total, reverse=True)[:20]
