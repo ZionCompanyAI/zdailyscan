@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from app.scrapers import get_hot_products
 from app.analyzers.import_calculator import calculate_import_cost
 from app.analyzers.mercado_livre import BRMarket, search_br_market
+from app.analyzers.trend_analyzer import compute_trend_score
 from app.scoring.scorer import AliProduct, ProductScore, score_product
 from app.reporters.telegram_reporter import send_daily_report
 from app.reporters.file_reporter import save_daily_report
@@ -82,7 +83,8 @@ async def run_daily_scan(
                 )
             cost = calculate_import_cost(product.price_usd, product.freight_usd)
             ali = AliProduct(product_id=product.product_id, title=product.title)
-            score = score_product(ali, market, cost)
+            trend_score = compute_trend_score(product.title)
+            score = score_product(ali, market, cost, trend_score=trend_score)
             all_scores.append(score)
 
     viable = [s for s in all_scores if s.viavel]
