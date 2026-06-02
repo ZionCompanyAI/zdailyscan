@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #156)
+- TASK-156: fix(Dockerfile) — instalar curl para subprocess.run no scraper Scrapling (#156) — arquivado 2026-06-01
+
 ## Concluído (issue #154)
 - TASK-154: fix(scraper) — subprocess curl --compressed + regex undefined-como-chave (2 passos) + NaN/Infinity→null + nixpacks.toml + preço None-safe — arquivado 2026-06-01
 
