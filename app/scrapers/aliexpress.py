@@ -237,8 +237,15 @@ _SCRAPLING_HEADERS = {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Cache-Control": "max-age=0",
     "Referer": "https://www.aliexpress.com/",
 }
 
@@ -385,6 +392,7 @@ async def _scrape_with_firecrawl(
 async def _scrape_with_scrapling(
     category_id: str, max_results: int, keyword: str = ""
 ) -> list[AliProduct]:
+    import asyncio
     import re
     import urllib.parse
     import httpx
@@ -394,26 +402,33 @@ async def _scrape_with_scrapling(
     else:
         url = f"https://www.aliexpress.com/category/{category_id}/bestselling.html"
 
-    try:
-        resp = httpx.get(url, headers=_SCRAPLING_HEADERS, follow_redirects=True, timeout=15)
-        resp.raise_for_status()
-        html = resp.text
-    except Exception as exc:
-        logger.warning("[scraper:scrapling] category=%s keyword=%r failed: %r", category_id, keyword, exc)
-        return []
-
     _JS_PATTERNS = [
         r"window\._dida_config_\._init_data_\s*=\s*",
         r"window\.runParams\s*=\s*",
         r"window\.__INITIAL_STATE__\s*=\s*",
     ]
+
     m = None
-    for _pat in _JS_PATTERNS:
-        m = re.search(_pat, html)
+    for _attempt in range(3):
+        if _attempt > 0:
+            await asyncio.sleep(4)
+        try:
+            resp = httpx.get(url, headers=_SCRAPLING_HEADERS, follow_redirects=True, timeout=20)
+            resp.raise_for_status()
+            html = resp.text
+        except Exception as exc:
+            logger.warning("[scraper:scrapling] attempt=%d category=%s keyword=%r failed: %r", _attempt, category_id, keyword, exc)
+            html = ""
+
+        m = None
+        for _pat in _JS_PATTERNS:
+            m = re.search(_pat, html)
+            if m:
+                break
         if m:
             break
-    if not m:
-        logger.warning("[scraper:scrapling] category=%s keyword=%r no JS data found", category_id, keyword)
+        logger.warning("[scraper:scrapling] attempt=%d category=%s keyword=%r no JS data (len=%d)", _attempt, category_id, keyword, len(html))
+    else:
         return []
 
     raw = html[m.end():]
