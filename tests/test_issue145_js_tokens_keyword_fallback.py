@@ -24,6 +24,13 @@ def _make_resp(html: str, status_code: int = 200) -> MagicMock:
     return resp
 
 
+def _make_curl_result(html: str, returncode: int = 0) -> MagicMock:
+    result = MagicMock()
+    result.returncode = returncode
+    result.stdout = html.encode("utf-8")
+    return result
+
+
 def _html_with_init_data(payload_str: str) -> str:
     return (
         f"<html><script>window._dida_config_._init_data_ = {payload_str};"
@@ -48,7 +55,7 @@ async def test_scrapling_undefined_in_json_does_not_crash():
     payload_with_undefined = payload.replace('"4.7"', "undefined")
     html = _html_with_init_data(payload_with_undefined)
 
-    with patch("httpx.get", return_value=_make_resp(html)):
+    with patch("subprocess.run", return_value=_make_curl_result(html)):
         products = await _scrape_with_scrapling("200003655", max_results=10)
 
     # Should not raise, should return product (with rating 0 or 4.7 depending on parse)
@@ -63,7 +70,7 @@ async def test_scrapling_nan_in_json_does_not_crash():
     payload_with_nan = payload.replace('"4.7"', "NaN")
     html = _html_with_init_data(payload_with_nan)
 
-    with patch("httpx.get", return_value=_make_resp(html)):
+    with patch("subprocess.run", return_value=_make_curl_result(html)):
         products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert len(products) == 1
@@ -77,7 +84,7 @@ async def test_scrapling_infinity_in_json_does_not_crash():
     payload_with_inf = payload.replace('"4.7"', "Infinity")
     html = _html_with_init_data(payload_with_inf)
 
-    with patch("httpx.get", return_value=_make_resp(html)):
+    with patch("subprocess.run", return_value=_make_curl_result(html)):
         products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert len(products) == 1
@@ -97,7 +104,7 @@ async def test_scrapling_multiple_js_tokens_in_json():
     )
     html = _html_with_init_data(raw_json)
 
-    with patch("httpx.get", return_value=_make_resp(html)):
+    with patch("subprocess.run", return_value=_make_curl_result(html)):
         products = await _scrape_with_scrapling("200003655", max_results=10)
 
     assert len(products) == 1
@@ -112,7 +119,7 @@ async def test_scrapling_keyword_falls_back_to_run_params():
     payload = json.dumps({"data": {"resultList": [_PRODUCT_ITEM]}})
     html = _html_with_run_params(payload)
 
-    with patch("httpx.get", return_value=_make_resp(html)):
+    with patch("subprocess.run", return_value=_make_curl_result(html)):
         products = await _scrape_with_scrapling("", max_results=10, keyword="USB-C adapter")
 
     assert len(products) == 1
@@ -133,7 +140,7 @@ async def test_scrapling_init_data_takes_priority_over_run_params():
         f"</script></html>"
     )
 
-    with patch("httpx.get", return_value=_make_resp(html)):
+    with patch("subprocess.run", return_value=_make_curl_result(html)):
         products = await _scrape_with_scrapling("", max_results=10, keyword="test")
 
     assert len(products) == 1
@@ -145,7 +152,7 @@ async def test_scrapling_no_pattern_found_returns_empty():
     """Se nenhum padrão JS é encontrado, retorna [] sem crash."""
     html = "<html><script>window.foo = 1;</script></html>"
 
-    with patch("httpx.get", return_value=_make_resp(html)):
+    with patch("subprocess.run", return_value=_make_curl_result(html)):
         products = await _scrape_with_scrapling("", max_results=10, keyword="test")
 
     assert products == []

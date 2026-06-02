@@ -394,8 +394,8 @@ async def _scrape_with_scrapling(
 ) -> list[AliProduct]:
     import asyncio
     import re
+    import subprocess as _subprocess
     import urllib.parse
-    import httpx
 
     if keyword:
         url = f"https://www.aliexpress.com/wholesale?SearchText={urllib.parse.quote_plus(keyword)}&SortType=total_tranpro_desc"
@@ -413,18 +413,29 @@ async def _scrape_with_scrapling(
         if _attempt > 0:
             await asyncio.sleep(4)
         try:
-            resp = httpx.get(url, headers=_SCRAPLING_HEADERS, follow_redirects=True, timeout=20)
-            resp.raise_for_status()
-            html = resp.text
+            result = _subprocess.run(
+                ["curl", "-s", "-L", "--max-time", "20", "--compressed",
+                 "-H", f"User-Agent: {_SCRAPLING_HEADERS['User-Agent']}",
+                 "-H", f"Accept: {_SCRAPLING_HEADERS['Accept']}",
+                 "-H", "Accept-Language: en-US,en;q=0.9",
+                 "-H", "Accept-Encoding: gzip, deflate, br",
+                 url],
+                capture_output=True, timeout=25
+            )
+            html = result.stdout.decode("utf-8", errors="replace") if result.returncode == 0 else ""
         except Exception as exc:
-            logger.warning("[scraper:scrapling] attempt=%d category=%s keyword=%r failed: %r", _attempt, category_id, keyword, exc)
+            logger.warning("[scraper:scrapling] attempt=%d category=%s keyword=%r curl failed: %r", _attempt, category_id, keyword, exc)
             html = ""
 
-        m = None
-        for _pat in _JS_PATTERNS:
-            m = re.search(_pat, html)
-            if m:
-                break
+        if not html:
+            logger.warning("[scraper:scrapling] attempt=%d category=%s keyword=%r empty response", _attempt, category_id, keyword)
+            m = None
+        else:
+            m = None
+            for _pat in _JS_PATTERNS:
+                m = re.search(_pat, html)
+                if m:
+                    break
         if m:
             break
         logger.warning("[scraper:scrapling] attempt=%d category=%s keyword=%r no JS data (len=%d)", _attempt, category_id, keyword, len(html))
@@ -432,7 +443,8 @@ async def _scrape_with_scrapling(
         return []
 
     raw = html[m.end():]
-    raw = re.sub(r"\bundefined\b", "null", raw)
+    raw = re.sub(r'([{,\[]\s*)undefined(\s*:)', r'\1"_undefined_"\2', raw)
+    raw = re.sub(r'\b(undefined|NaN|-?Infinity)\b', 'null', raw)
 
     try:
         data, _ = _json.JSONDecoder().raw_decode(raw)
@@ -453,7 +465,7 @@ async def _scrape_with_scrapling(
             )
             prices = item.get("prices", {})
             sale_price = prices.get("salePrice", {}) if isinstance(prices, dict) else {}
-            price_raw = str(sale_price.get("minPrice", 0) if isinstance(sale_price, dict) else 0)
+            price_raw = str((sale_price.get("minPrice") or 0) if isinstance(sale_price, dict) else 0)
             rating_raw = str(item.get("star_rating") or item.get("starRating") or "0").strip()
             trade_raw = (
                 str(item.get("real_trade_count") or item.get("tradeCount") or "0")
