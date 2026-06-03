@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #170)
+- TASK-170: docs — docs/api-reference.md com todos os endpoints (23 rotas), schemas ScanResult e ProductScore — arquivado 2026-06-03
+
 ## Concluído (issue #167)
 - TASK-167: fix(pipeline+api) — ScanResult.status="completed" (default) + /scan/run redireciona para _run_scan_background do dashboard (atualiza _scan_status corretamente) — arquivado 2026-06-02
 
