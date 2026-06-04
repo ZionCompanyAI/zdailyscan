@@ -1,7 +1,6 @@
 """Tests for issue #178: pipeline must pass min_rating=4.9 and use niche keywords."""
-from unittest.mock import AsyncMock, call, patch
+from unittest.mock import AsyncMock, patch
 
-import pytest
 
 
 def test_default_keywords_include_samsung():
@@ -24,7 +23,6 @@ async def test_pipeline_passes_min_rating_49(monkeypatch):
     """run_daily_scan must call get_hot_products with min_rating=4.9."""
     from app.analyzers.import_calculator import ImportCost
     from app.analyzers.mercado_livre import BRMarket
-    from app.aliexpress import AliExpressProduct
 
     monkeypatch.setattr("app.pipeline.CATEGORIES", ["cat1"])
     monkeypatch.setattr("app.pipeline.get_active_keywords", lambda: [])
