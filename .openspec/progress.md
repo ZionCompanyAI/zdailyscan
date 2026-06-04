@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #156)
+- TASK-156: fix(Dockerfile) — instalar curl via apt-get para subprocess.run no scraper — arquivado 2026-06-04
+
 ## Concluído (issue #170)
 - TASK-170: docs — docs/api-reference.md com todos os endpoints (23 rotas), schemas ScanResult e ProductScore — arquivado 2026-06-03
 
