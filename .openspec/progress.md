@@ -3,6 +3,9 @@
 ## Em andamento
 (nenhum)
 
+## Concluído (issue #177)
+- TASK-177: fix(scraper) — filtrar price_usd=0 em get_hot_products() (linha 615 aliexpress.py); 1 teste novo — arquivado 2026-06-04
+
 ## Concluído (issue #170)
 - TASK-170: docs — docs/api-reference.md com todos os endpoints (23 rotas), schemas ScanResult e ProductScore — arquivado 2026-06-03
 
