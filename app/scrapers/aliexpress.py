@@ -612,5 +612,5 @@ async def get_hot_products(
             )
             products = await _scrape_with_crawl4ai(category_id, max_results, session_cookies)
 
-    filtered = [p for p in products if p.rating >= min_rating]
+    filtered = [p for p in products if p.rating >= min_rating and p.price_usd > 0]
     return filtered[:max_results]

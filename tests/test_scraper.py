@@ -102,3 +102,28 @@ async def test_crawl4ai_mode_applies_min_rating_filter():
 
     assert all(p.rating >= 4.5 for p in results)
     assert low_rated not in results
+
+
+@pytest.mark.asyncio
+async def test_get_hot_products_filters_zero_price():
+    """Products with price_usd=0 are excluded — prevents zero import cost inflating the score."""
+    zero_price = AliProduct(
+        product_id="0",
+        title="No Price",
+        price_usd=0.0,
+        sale_count_30d=100,
+        rating=4.9,
+        image_url="",
+        product_url="",
+        category_id="200000783",
+    )
+    with patch.dict(os.environ, {"SCRAPER_MODE": "crawl4ai"}):
+        with patch(
+            "app.scrapers.aliexpress._scrape_with_crawl4ai",
+            new_callable=AsyncMock,
+            return_value=[_FAKE_PRODUCT, zero_price],
+        ):
+            results = await get_hot_products("200000783")
+
+    assert zero_price not in results
+    assert _FAKE_PRODUCT in results
