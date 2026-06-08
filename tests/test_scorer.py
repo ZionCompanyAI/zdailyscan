@@ -112,3 +112,49 @@ def test_score_formula_weights():
     assert result.score_oportunidade == pytest.approx(0.60, abs=0.001)
     assert result.score_tendencia == pytest.approx(0.5, abs=0.001)
     assert result.score_logistica == pytest.approx(1.0, abs=0.001)
+
+
+# --- issue #176: custo zero deve produzir score_margem=0.0 e viavel=False ---
+
+def test_zero_cost_score_margem_is_zero():
+    # Produto com total_cost_brl=0 não pode ser avaliado → score_margem=0.0
+    ali = AliProduct(product_id="z1", title="Sem Preço")
+    market = _make_market(avg_price=100.0, result_count=50)
+    cost = _make_cost(price_usd=0.0, total_cost_brl=0.0)
+
+    result = score_product(ali, market, cost)
+
+    assert result.score_margem == 0.0
+
+
+def test_zero_cost_viavel_is_false():
+    # Produto com total_cost_brl=0 deve ser marcado inviável (viavel=False)
+    ali = AliProduct(product_id="z2", title="Sem Preço")
+    market = _make_market(avg_price=100.0, result_count=50)
+    cost = _make_cost(price_usd=0.0, total_cost_brl=0.0)
+
+    result = score_product(ali, market, cost)
+
+    assert result.viavel is False
+
+
+def test_zero_cost_score_total_is_zero():
+    # Produto com total_cost_brl=0 → score_total=0.0 (produto ignorado no ranking)
+    ali = AliProduct(product_id="z3", title="Sem Preço")
+    market = _make_market(avg_price=100.0, result_count=50)
+    cost = _make_cost(price_usd=0.0, total_cost_brl=0.0)
+
+    result = score_product(ali, market, cost)
+
+    assert result.score_total == 0.0
+
+
+def test_zero_cost_import_cost_brl_is_zero():
+    # import_cost_brl deve refletir o custo real: 0.0
+    ali = AliProduct(product_id="z4", title="Sem Preço")
+    market = _make_market(avg_price=100.0, result_count=50)
+    cost = _make_cost(price_usd=0.0, total_cost_brl=0.0)
+
+    result = score_product(ali, market, cost)
+
+    assert result.import_cost_brl == 0.0

@@ -26,6 +26,23 @@ class ProductScore(BaseModel):
 
 
 def score_product(ali: AliProduct, market: BRMarket, cost: ImportCost, trend_score: float = 0.5) -> ProductScore:
+    if cost.total_cost_brl <= 0:
+        return ProductScore(
+            product_id=ali.product_id,
+            title=ali.title,
+            score_total=0.0,
+            score_margem=0.0,
+            score_demanda_br=0.0,
+            score_oportunidade=0.0,
+            score_tendencia=0.0,
+            score_logistica=0.0,
+            margin_brl=0.0,
+            sell_price_suggestion_brl=0.0,
+            viavel=False,
+            demand_count=market.result_count,
+            import_cost_brl=0.0,
+        )
+
     avg_price = market.avg_price_brl or 0.0
 
     if avg_price > 0:
