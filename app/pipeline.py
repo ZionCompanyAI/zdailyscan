@@ -43,7 +43,11 @@ CATEGORIES: list[str] = [
     "200000783",  # Computer & Office
 ]
 
-DEFAULT_KEYWORDS = "USB-C adapter,USB hub multiport,HDMI adapter,wireless charger,phone stand,laptop stand,bluetooth earphones,Thunderbolt hub,screen protector,power bank"
+DEFAULT_KEYWORDS = (
+    "USB-C hub multiport,USB-C adapter,Thunderbolt hub,DisplayLink adapter,"
+    "Samsung Galaxy case,Samsung Galaxy charger,Samsung USB-C cable,"
+    "wireless charger Samsung,USB-C to HDMI adapter,USB-C docking station"
+)
 
 
 def get_active_keywords() -> list[str]:
@@ -85,7 +89,7 @@ async def run_daily_scan(
 
     for category_id, keyword in scan_targets:
         try:
-            products = await get_hot_products(category_id, keyword=keyword, max_results=10 if keyword else 100)
+            products = await get_hot_products(category_id, keyword=keyword, max_results=10 if keyword else 100, min_rating=4.9)
         except Exception as exc:
             logger.warning("scraper failed for category %s: %r", category_id, exc)
             continue
